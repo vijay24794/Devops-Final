@@ -1,0 +1,3655 @@
+1.) HAPROXY
+
+Install apache on three nodes and edit index.html accrodingly on node1 and node2.
+Install haproxy on third loadbalancer node.
+apt-get install -y haproxy
+vi /etc/haproxy/haproxy.cfg
+delete everything paste below  ::
+
+global
+daemon
+maxconn 256  
+
+defaults  
+mode http
+timeout connect 5000ms
+timeout client 50000ms
+timeout server 50000ms
+
+frontend http-in
+bind *:80
+balance roundrobin
+default_backend servers
+
+backend servers
+server web1 public-ip_node_1:80 check maxconn 32
+server web2 public-ip_node_2:80 check maxconn 32
+
+save and restart havproxy services -- service haproxy restart
+
+To test ::
+while true: do curl http://localhost; sleep 1: done
+or http://load_balancer_node_ip -- refresh it.
+
+To start haproxy services automatically on reboot ::
+vi /etc/default/haproxy
+ENABLE=1
+
+
+Mulit HAPROXY configuration ::
+
+Install haproxy on below three instances ::
+Ha proxy 1
+HA Proxy 2
+HA proxy 3
+
+Install apacche and deploy index.html file on webservers.
+WebNode 1
+WebNode 2
+
+Configure haproxy1 and haproxy2 to redirect connection to webnode1 and 2.
+Configure haproxy3 to redirict connection to haproxy1 and 2.
+
+*****************************************************************************
+
+
+
+2.)SVN ::
+
+Subversion is centrialised version control system
+
+Trunk : Contains the final live copy of the code that is master code.
+tags  :: Tag is the revisions of the code.  
+branch :: A version of the repository that diverges from a mian working project.
+
+
+apt-get install apache2 libapache2-svn apache2-utils subversion -y
+mkdir svn; cd svn ; 
+svnadmin create testrepo
+chown -R www-data:www-data testrepo  
+
+vi /etc/apache2/mods-enabled/dav_svn.conf
+give location,parent path,authuserfile.
+
+mkdir -p /opt/{trunk tags branches}
+svn import http://public-ip/svn/testrepo/ -m '" adding direcotry trunk, tags, branches ..."
+
+http://public_ip/svn/testrepo
+
+htpasswd -c /etc/subversion/passwd user1 
+htpasswd -m /etc/subversion/passwd user2
+
+user1# svn checkout http://public-ip/svn/testrepo/
+
+cd /trunk
+vi index.html
+svn status  
+svn add index.html 
+svn commit -m "USER-1 code"  
+
+http://public-ip/svn/testrepo/trunk/index.html
+
+svn log
+svn log index.html
+
+svn copy -r4 trunk/ tags/TabelTag
+svn commit -m "Table tag added"
+
+
+svn copy -r4 trunk/branches/LoginPage
+svn commit -m "Login page branch"
+
+cd branches/LoginPage
+vi index.html //add new code
+svn status
+svn commit -m "Login page"
+
+http://public_ip/svn/testrepo/braches/LoginPage/index.html
+
+svn merge ../branches/LoginPage/ -- select option merger(m) -- then 12 -- their version(branch version) first than yours (trunk version)
+
+svn status
+svn commit -m "code merged"
+
+**********************************************************
+
+3. GIT
+
+Git is open source distributed version control system.
+Every commit is given a commit id.
+Head refers to latest commit_id.
+ 
+clone -- A clone is to create a copy of repository.
+Master :: is a primary branch. All committed and accepted changes are on the master branch.
+Checkout : checkout is used to switch branches in repository.
+Merge :: Taking the changes from one branch and adding them into another.
+Rebase :: to change base/origin of a branch.
+
+https://github.com  -- create public repo dev8am. Private repo is paid.
+
+Now on local instances ::
+yum install git-core -y  
+git --version
+git init
+git clone https://github.com/dev8am/repo_name.git
+
+Configure glboal repo to local ::
+git config --global user.name username
+git config --global user.email email_id
+
+cd dev8am
+vi index.html
+git add index.html
+git commit -m "html code"
+git push origin master  /enter useranme/password.
+
+Restoring a deleted file ::
+rm index.html
+git staus
+git checkout index.html
+git status 
+ls
+
+Moving a file ::
+mkdir code_dir 
+git mv index.html dev8am/code_dir/index.html
+git commit -am "file moved"
+git push origin master
+
+Delete a file::
+git rm readme.md
+git commit -am "file removed"
+git push origin master
+
+Push code to master global repo requires username/pwd, make passwordless ::
+cd ~/.ssh
+ssh-keygen
+cat id_rsa.pub  //copy contents.
+github.com - dev8am - settings - deploy keys --add keys - keyname -mykey - paste id_rsa.pub.
+
+Register your instance with public key
+git remote set-url origin git@github.com:account_name/dev8am.git
+
+Git logs ::
+git log 
+q  // to quit logs.
+git log -p  //it will show deleted and newly added code.
+git log --online // it will show all commitids.
+git log --since=20-jun-2019 --until=21-jun-2019
+
+Create and merge a branch ::
+git branch br1
+git branch  //list branches.
+git checkout br1 //to swith to a branch.
+ls
+vi index_2.html
+wirte something
+git commit -m 'html file_2'
+git push origin br1
+
+Now this file is in branch 1 not in master.
+
+Log in to github -- repo - branch --select br1 instead of master.
+
+Now merge branch to master.
+git checkout master //change to master branch
+git merge br1  // this merge is only in local repository.
+git status
+git push origin master
+
+git checkout -b br2 //create and swith branch to br2.
+
+
+Deleting a branch ::
+git checkout master
+git branch -d br1  
+git branch -D br2 // to delete before merge.
+git status
+git push origin --delete br1
+git push origin --delete br2 // no need to run as its not merged.
+
+Create branch on previous commid_ids ::
+git log --online
+git branch br2 <commit_id>
+
+
+Git merge ::
+
+git branch dev
+git checkout dev
+open an exisiting code file like index.html
+Write something.
+
+git add index.html
+git commit -m "branch -code"
+git push origin dev
+
+git checkout master
+vi index.html //there will be no branch changes in this file yet.
+
+wirte test code from master
+
+git add index.html
+git commit -m "master code"
+
+Now merge::
+
+git merge dev // it will fail. here we can't merge or accept a version but we have to open file and fix conflicts and merge again.
+vi index.html
+remove additional comments and keep changes from both master and dev and save file.
+
+git commit -am "code merge"
+git push origin master
+
+ 
+Git stash ::
+
+Stashing is a way to pause what you are currently working on and come back to it later.
+
+vi demo.java  //append this code to file.
+void Subtraction() { c=a+b }
+
+git status
+git stash save "arith oprs" //send your file to stash and download new master code.
+
+git log --online
+
+vi demo.java 
+
+your code will not be there. YOu can do a new task after commiting that you can restore your stash.
+
+vi index.html
+<h1> hello from git stash demo</h1>
+
+git add  index.html
+gid commit -m "html code"
+git push origin master
+git stash list  //every stash has stash id.
+git stash apply stash@{0}
+or
+git stash pop stash@{0}   //this will apply stash as well as  drop stash.
+git stash drop stash@{0}
+git stash clear // to clear all stashes
+
+
+Git rebase ::
+
+Git merge takes all changes in one branch and merges them into another branch on commit. But rebase is to  change the base or origin of a branch. We can rebase a new branch branch onto master branch.
+
+git branch test
+git checkout test
+vi index.html 
+append this line.
+<h1>hello the new code line for git rebase</h1>
+
+git commit -am "git rebase code"
+git push origin test
+
+vi index.html //you can see you new line along with old one.
+
+git log --online
+
+git checkout master
+git log --online
+//new commit_id of test branch will not be available here.
+
+
+git rebase test  
+
+git log --online  //now you can see new commit_id there and your new index.html file will be modified too.
+
+But this rebase is done in local repository and we need to move it to central repo, you can verify this by ::
+
+git status  //it will show your branch is ahead by 1 commit from master.
+
+git push origin master
+
+
+GIT LAB ::
+
+Minimum 3GB ram required.
+
+apt-get install -y curl openssh-server ca-certificates 
+sudo apt-get install -y postfix
+curl https://packages.gitlab.com/install/repositories/gitlab/gitlab-ee/script.dev.sh | sudo bash
+sudo EXTERNAL_URL="http://gitlab.example.com" apt-get install gitlab-ee
+gitlab-ctl reconfigure
+Reset root password 
+http://mahicne_ip/ enter root/pwd.
+We can create repository, clone to developers work area and rest all same as github.
+
+********************************************************************************************
+
+4. ANT & Maven
+
+Build tools are used for compliing,packaging,deloying,testing and moving code from one location to another.
+ANT :: ANOTHER NEAT tool. Java based build tool from apache. 
+
+Installation using distribution method ::
+cd /opt ::
+wget download_link_jdk8.tar.gz
+wget download link_tomcat9.tar.gz
+wget download_link_ant_1.10.5.tar.gz
+wget dwonlaod_link_maven3.6.0.tar.gz
+tar xzf *
+
+
+
+vi .profile or bashhrc
+
+export JAVA_HOME="opt/jdk1.8.0.211:
+export PATH=$JAVA_HOME/bin:$PATH
+
+export CATALINE_HOME/"/opt/apache-tomcat-9.0.21"
+export PATH=$cATALINA_HOME/bin:$PATH
+
+export ANT_HOME="/OPT/apache-ant-1.10.6"
+export PATH=$ANT_HOME/bin:$PATH
+
+export M2_HOME='/opt/apache-maven-3.6.1"
+export PAH=$M2_HOME/bin:$PATH
+
+:wq
+
+source .profile
+java -version
+ant -version
+mvn -version`
+
+Ant's build file,called build.xml should reside in base directory of the project. There should be no blank lines or whitespace before the xml declaration.
+<?xml version="1.0"?>
+Name :: name of project.
+Default :: the default target for build script.A project may contain any number of targets. This attribute speicifies which target should be considered as the default. (Mandatory)
+Basedir :: The base directory or root folder for the project. Optional.
+Target :: target is collection of tasks that you want to run as one unit.
+
+
+apt-get install git-core -y
+
+git clone http://github.com/sathyadevops/ant-proj.git
+
+  
+cd ant-proj
+ant //this  command  will compile and build code and generate war file  AntExample.war file
+cp AntExample.war /opt/apache-tomcat-9.0.21/webapps/
+http://public_ip:8080/AntExample
+
+
+
+Maven ::
+
+Ant has  drawback when it builds code it overwrites old code file.It doesn't take a backup or versioning.
+Maven is a project management and comprehension tool.
+Maven provides developers a complete build lifecycle framework.
+Maven project structure and content are declared in an xml file, pom.xml reffered as project object model(POM), which is the fundamential unit of the entire maven system.
+
+
+Group_id : Artifact_id : version
+Sathya    :  Proj1:       1.0
+Sathya    :  Proj1:       2.0
+Sathya    :  Test1:       1.0
+
+
+Maven build life cycle 
+----------------------
+mvn clean : to clean local repo.
+mvn compile : to compile the code.
+mvn test : to apply test cases.
+mvn package : to prepare a package.
+mvn install : to install file Local repo. [.m2]
+mvn deploy : to deploy a file remote server/ Global repos(nexus)
+
+Pom.xml : All POM files require the project element and three mandatory fields : groupid,artifactid,version.Each project has one pom file only.
+
+git clone https://github.com/sathyadevops/mvnproj.git
+cd mvnproj
+vi pom.xml //change groupid,artifactid,version if necessary.
+mvn clean
+mvn compile
+mvn test
+mvn package
+mvn install    // to create local repository .m2.
+cd 
+ls -a
+cd .m2
+cd repository
+cd sathya
+cd devops
+cd 1.0
+cp devops-1.0.war /opt/apache-tomcat-9.0.21/webapps
+startup.sh
+http://public_ip:8080/devops-1.0  //open this in browser
+
+Now you can cd mvnproj
+Make cahnges to index.jsp
+IN pom.xml change version 2.0
+Now you can access both version as below ::
+http://public_ip:8080/devops-1.0
+http://public_ip:8080/devops-2.0
+
+
+Remote deployment using maven ::
+
+ON tomcat server :: 
+i)Add an user with roles manager-gui and manager-script in tomcat-user.xml file on tomcat server node
+vi %TOMCAT7_PATH%/conf/tomcat-user.xml
+ii)On maven server ::
+vi /opt/apache-maven-3.6.1/conf/setting.xml
+server_id , useranme and password
+
+IN pom.xml 
+add tomcat plugin and edit below lines ::
+<url>http://localhost:8080/manager/text</url>
+<server>TomcatServer</server>
+<path>/myproj</path>
+
+Remove localhost with remote tomcat server_ip.
+
+iii) Deploy 
+cd /mvnproj
+mvn package
+mvn install
+mvn tomcat7:deploy
+cd /opt/apache-tomcat-9.0.21/webapps/
+ls -ltr
+myproj.war  //will be there.
+
+Now in browser ::
+https://localhost:8080/myproj
+
+Now to undeploy/redeploy
+mvn tomcat7:undeploy
+mvn tomcat7:redploy
+
+********************************************************************
+
+5. JENKINS
+
+JENKINS WORKFLOW :: 
+i)A developer commits the code to source code repository(SVN/GIT)
+Meanwhile jenkins server checks the repository at regular intervals for changes.
+ii)After a commit occurs, jenksins server detects the changes that have occured in the source code repository. Jenkins will pull those changes and will start prepargin a new build.
+iii) If the build fails then the concerned team will be notified.
+iv) If build is successfull then jenkins deploys the built in the test server.
+v) After testing jenkiins generates a feedback and then notifies the developers about the build and test results.
+
+Jenkins install ::
+YOu can install using yum or apt-get or use below war file methiod ::
+
+i)Download java, tomcat server and jenkins.war
+ii)Deploy jenkins.war in tomcat/webapps
+iii)start tomcat service
+iv) browser --> http://localhost:8080/jenkins.
+v) Install ant and maven and git.
+vi) Set path 
+export JAVA_HOME="/opt/jda1.8.0_211"
+export PATH=$JAVA_HOME/bin:$PATH
+
+export CATALINA_HOME="/opt/apache-tomcat-9.0.20"
+export PATH=$CATALINE_HOME/bin:$PATH
+
+export ANT_HOME="/opt/apache-ant-1.10.6"
+export PATH=$ANT_HOME/bin:$PATH
+
+export M2_HOME="/opt/apache-maven-3.6.1"
+export PATH=$M2_HOME/bin:$PATH
+
+save and source file.
+
+Installing apache and deploying index.html file ::
+
+Jenksins -- new item -- free style project - build -- execute shell
+apt-get update
+apt-get install -y apache2
+service apache2 start
+echo "<h1> Good day from webserver </h1>" > /var/www/html/index.html
+echo "package isntalled and file deployed"
+
+apply -- save --"build now".
+
+
+Adding Tools to Jenkins ::
+
+i) Git 
+apt-get isntall git-core -y
+set git path -- jenkins -- manage jenkins -- global tool configuration -- 
+name --git
+path : /usr/bin/git --save
+
+ii) jdk 
+jenkins - manager jenkins -- global tool configuration -- jdk
+name -- jdk1.8
+path -- JAVA_HOME (/opt/jdk1.8.0_211)
+
+iii) ant
+name -- ant1.10
+path -- (ANT_HOME) /opt/apache-ant-1.10.6
+iv) Maven
+name -- maven3.6
+path -- /opt/apache-maven-3.6.1
+
+save
+
+
+Deploying Ant project ::
+
+new item -- name -- ant project -- select freestype project
+scroll to -- source code mgt -- git -- https://github.com/sathyadevops/ant_proj.git
+
+scroll to build -- invoke ant
+ant version -- default
+target -- keep blank
+build now
+See the output it will create a AntExample.war file in /root folder. Copy this file path.
+
+Deploy this file ::
+back to project - confifure - 
+Build -- add build step -- execute shell
+command -- cp /root/.jenkins/jobs/ANT_PROJECT/workspace/dist/AntExample.war /opt/apache-tomcat-../webapps
+echo "File deployed"
+
+save 
+build now
+
+//ly if tomcat server is remote you can use scp command here.
+
+
+Email Notification configuration ::
+
+manage jenkins - confiugre system -- email notification
+smtp server -- if you don't have any then enter smtp.gmail.com
+email suffix -- @gmail.com
+tick smtp authentication.
+enter senders detail in below sections ::
+username -- sathish@gmail.com
+password -- enter actaul password
+user ssl --tick
+reply-to-address-- sathish@gmail.com
+tick test configuration by sending test mail -- mail@gmail.com
+test configuration 
+save
+
+Use email in ant-project ::
+ant-project - configure --build
+target --pacakge(for ant target should be blank so it will give error)
+post build action -- email-notification
+recipents :: enter recipents mail_id seperated by space.
+
+build now --build will fail and recipent will get mail.
+
+Now configure -- build -- target -- make it blank -- buil will succfull and recipent will get mail for succfull deployment -- war file will be deployed to tomcat -- machine_ip:8080
+
+
+Automate builds ::
+Build periodically :: using crontab
+Poll SCM :: Whenever a record is udpated or code changes jenkins will start build.
+
+ant-project- jenkins - configure - scroll to build triggers --
+schedule -- */5 * * * *
+save
+Now every five minute jenkins will start a build. But it will build even if there is no code change. So overcome this use poll scm.
+
+ant-project - configure - build triggers -- tick poll scm
+schedule -- */5 * * * *
+Now every file minute jenkins check repository for any code change and if there are changes it will start build.
+
+
+Maven project build ::
+
+i) compile
+Ant has single stage build using ant command. Maven has different stages like compile package test deploy etc.
+
+jenkin-new item-name-maven_compile-free stype project -- source code mgt -git -- https://github.com/sathyadevops/mvnproj.git
+build-add build step -- invoke top-level-maven targets- goal- compile
+bild now -- click
+
+ii) package 
+Frist insatll jenkins integration plug-in.
+manage jenkins -plugin - available -- search -- maven integration -- install without restart 
+//ly search build pipeline -- install
+
+new item -- name-maven_package-select maven project instead of freestyle proj --source code mgt -git - https://github.com/sathyadevops/mvnproj.git
+scroll to build -- pom.xml -- will be already there.
+goal -- pacakge
+build now -- it will create a war file. copy the path of war file and deploy in next step.
+
+iii) deploy
+new item - maven deploy - freestyle -- build - execute sheel -- command -- 
+cp /path_to_war_file/file.war /opt/apache-tomcat/webapps
+echo "File deployed"
+save --build now
+
+We can join these three maven stages in one using build pipeline.
+
+i)select maven_compile - configure - post build action -- build other projects -- project to build -- maven_package -- tick trigger only if build is stable(successfull)
+ii) select maven_pacakge-configure - post build action --build other project -- maven_deploy --save
+iii) Now run -- jenkins -- All+ -- click this plus sign -- veiw name -- jenkins build pipeline - tick - default build pipeline -ok 
+select initial build -- select maven_compile --ok
+
+Now you can see pipeline stages --compile pacakge and deploy.
+
+
+Parallel builds :: 
+
+If we have to execute builds in parallel we will configure slves.
+Jenkins master can distribute the builds for multiple slave machines.
+
+Steps to create slave ::
+i) launch new machine name jenkins_slave
+ii) install jdk,tomcat,ant,maven,git and set path.
+iii) configure password less ssh authentication from master to slave.
+On slave node ::
+vi /etc/ssh/sshd_config
+PermitRootLgoin yes
+PasswordAuthentication yes
+
+ON master node
+ssh-keygen
+ssh-copy-id slave_node_ip
+
+cat .ssh/authorised_keys on slave node to see the key content.
+
+iv) Login to jenksins master url -- public_ip:8080/jenkins --admin/admin
+manager jenkins - manager node -- click new node -- node name -- node1 - permanent --ok.
+description -- to run java builds.
+#(number) of executors --5 //parallel execution.
+remote root directory -- /opt/.jenkins
+Labels --slave1
+usage - defualt
+launch method - launch agent via ssh
+host -- slave node ip
+credentials -- add -- jenkins - kind -username with password or key
+password --enter root/pwd
+key -- private key --tick -- paste private key content (cat ~/.ssh/id_rsa on master)
+advanced -- java_path --/usr/bin/java
+save
+select node1 - launch agent if node1 is not in sync.
+
+
+vi) Deploy ant-proj using slave node
+new-item- slave_job2 -- free style-- source code mgt -git - https://github.com/sathyadevops/ant_proj.git
+Build - invoke ant
+Tick --Restrict where this project can be run
+Label - salve1 or node1
+save - build
+
+
+Jenkins pipeline using scirpts ::
+
+Jenkinsfile can be written using two types of syntax --declarative (recent) and scripted.
+
+Node : a node is machine which is part of jenkin envrionment capable of excuting a pipeline.
+Stage : a stage is a subset of tasks.
+Step : a single task.
+
+Declarative pipeline lab : take node1 offline.
+
+jenkins -- new item - pipeline_1 -- pipeline scirpt
+pipeline{
+ agent any
+  stages {
+    stage('clonerepo'){
+     steps{
+            sh "rm -ef my-app"
+            sh "git clone https://github.com/sathyadevops/my-app.git"
+            sh "mvn clean -f my-app"
+           }
+         }
+       stage('compile'){
+          steps{
+              sh "mvn compile -f my-app"
+                }
+           }
+         stage('Test'){
+          steps{
+            sh "mvn test -f my-app"
+               }
+            }
+           stage('package'){
+            steps{
+             sh "mvn package -f my-app"
+             }
+           }
+          }
+      }
+
+
+
+
+Using scripted pipeline syntax ::
+pipeline{
+   agent any
+    stages{
+       stage('---clean----'){
+           steps{
+             sh "mvn clean"
+            }
+          }
+        stage('---compile----'){
+           steps{
+             sh "mvn compile"
+            }
+          }
+       stage('---test----'){
+           steps{
+             sh "mvn test"
+            }
+          }
+    stage('---package----'){
+           steps{
+             sh "mvn pacakge"
+            }
+          }
+
+    }
+}
+
+
+
+Adding users in Jenkins ::
+
+Install plugin -- manage jenkins -- manage plugins -- avialable --filer -- Role-based Authorization Strategy" -- install without restarting
+Jenkins -- manage jenkins -- manage users -- "add user or group(sales,accounts,admin,test) --enter username,pwd,email etc.
+manage jenksins -- manger and assign roles -- manage roles -- add developer and test roles and give them read write execute privileges as per role.
+manage jenksins -- manger and assign roles -- assign roles -- assign role to user and groups.
+
+
+*************************************************************************************
+
+6. Nexus 
+
+Nexus manages software "artifacts" required for development.
+
+3GB ram required.
+Download sonatype nexus download --tar.gz --extract.
+Path --set path to nexus bin folder and java_home.
+Start nexus
+cd /opt/nexus-3.16.1.02/bin
+./nexus run
+http://public_ip:8081 --admin/admin123
+
+
+ON jenkins mahcine ::
+
+git clone https://github.com/sathyadevops/mvnproj.git
+
+
+
+ON nexus browser -- 
+click browse and copy below urls ::
+maven-releases
+maven-snapshots
+
+
+cd mvnproj
+vi pom.xml
+paste aboce maven urls in nexus url section.
+
+save.
+
+vi /opt/apache-maven/conf
+vi settings.xml
+search servers and give nexus username/password.
+
+Uncomment this section by giving tab -->
+<server>
+nexus useranme
+password
+</server>
+
+save.
+
+But change is in local repository.
+
+Jenkins -- 
+
+
+Build
+cd /root/mvnproj
+mvn install
+mvn deploy
+echo "File deployed for Nexus"
+
+save and build
+
+*********************************************************************************
+
+7. Ansible
+
+Ansilbe is a CMS configuration management tool, that allow to control many diffeent systems in an automated way from one central location(orchrestration).
+Package installation,configuraiton of servers,application deployment, continuous testing,provisioning,orchrestration,automation of tasks.
+
+Why ansible :: free open source,agent-less,python/yml based,felxible,large no. of predefined modules,custom modules can be added,human readable.
+
+Controller machine :: machine on which master runs.
+Inventory : a file which contains information about servers.
+Module : abstracts of a system task.
+Task : a block that defines a single procedure to be executed.
+
+Installation ::
+three nodes :: master and node1 and node2.
+Configure passwordless ssh authentication from master to node1 and 2.
+ON master 
+apt-get isntall software-properties-common
+apt-add-repository ppa:ansible/ansible     
+apt-get install ansible
+
+cd /etc/ansible;ls
+ansible.cfg
+hosts
+IN host file make entry for your servers, and you can also make labels
+vi hosts
+[web-server]
+node_2_ip
+node_3_ip
+
+[app-server]
+ip1
+ip2
+
+[db-server]
+ipnode1
+ipnode2
+
+vi ansible.cfg  //unhash all except below 
+inventory = /etc/ansible/hosts  
+#ask_sudo_pass  //unhash if you want to ask for password after each cmd.
+#ask_pass
+deprecation_warnings=False
+
+Ansible commands ::
+
+ansible all --list-hosts
+ansible all -m ping
+ansible web-server -m ping //to connect all node under a label.
+ansible node_ip -m ping //to connect to a single node
+ansible web-server -m setup  //to get mahcine details
+ansible web-server -m setup |grep 'ansible_distribution'
+ansible all -m setup -a 'filter=ansible_distribution'
+ansible all -m command -a 'uptime'
+ansible web-server -m shell -a 'ls /' //to list files in / directory
+ansible all -m raw -a 'ls /'  //using raw you can run any linux command using ansible.
+ansbile all -m raw -a 'touch /tmp/demp.txt'
+ansbile all -m raw -a 'mkdir /tmp/mydir'
+ansbile all -m raw -a 'rm /tmp/demp.txt'
+ansible all -m file -a 'name=/opt/devops state=touch'
+ansible all -m file -a 'name=/opt/aws state=directory'
+ansible all -m file -a 'name=/opt/aws state=absent'  This will delete aws directory on all nodes.
+ansible all -m user -a 'name=john state=present'  //to create new user john
+ansible all -m group -a 'name=sales state=present  //to create group
+Change owner and group of a file ::
+ansible all -m file -a "name=/opt/devops mode='777' user='john' group='sales'"
+ansible all -m copy -a "src=/root/files/index.html dest=/tmp/index.html"
+
+Lab :
+For all Lab make host file as with two lables ubnt and cent ::
+vi hosts
+[ubnt]
+node_2_ip
+[cent]
+node_3_ip 
+
+Install,remove pacakges and start service commands ::
+
+you can check for package availability 
+apt-get install mysql-   //it willshow all package related to mysql.
+ansible ubnt -m raw -a 'apt-get update'
+ansible ubnt -m apt a 'name=apache2 state=latest'
+ansible ubnt -m service -a 'name=apache2 state=started'
+ansible cent -m raw -a 'yum install -y java'
+ansible cent -m yum -a 'name=httpd state=latest'
+ansible cent -m systemd -a 'name=httpd state=started'
+
+ansible all -m package -a 'name=git-core state=latest' // on both nodes package command can be used.
+
+ansible ubnt -m raw -a 'apt-get remove -y my-sqlserver'
+ansible ubnt -m raw -a 'apt-get purge -y mysql-server'
+ansible ubunt -m raw -a 'apt-get -y autoremove'  //this will remove all unused files not only mysqls file.
+
+ansible cent -m raw 'yum remove -y mariadb-server'
+ansible cent -m raw 'yum clean -y all'
+
+
+
+Crontab ::
+ansible all -m cron -a "name='myjob' minute='0' hour='5' job='ls -l > /tmp/files.log'"
+Now on node2 and node3 check crontab -l
+
+Playbook 1 :: install apache and deploy index.html file
+mkdir playbooks
+vi index.html
+<h1> hello </h1>
+
+vi playbooks/pb1.yml
+---
+- hosts: ubnt
+  become: true
+  gather_facts: false
+  tasks:
+  - name: to update repo
+  raw: apt-get update
+  
+  - name: to install apache
+    apt: name=apache2 state=latest
+
+  - name: to copy a file
+    copy:
+    src: /root/files/index.html
+    dest: /var/www/html/index.html
+
+  -name: to start service
+   service: name=apache2 state=started
+
+save and run
+ansible-playbook playbooks/pb1.yml --syntax-check
+ansible-playbook playbooks/pb1.yml
+
+
+Playbook 2 :: to install java,tomcat and deploy sample.war 
+
+wget https://tomcat.apache.org/tomcat-7.0-doc/appdev/sample/sample.war
+
+vi playbook/pb2.yml
+
+---
+- hosts:node_ip_centos_machine
+ become:true
+ gather_facts=false
+vars:
+ - pack1: java
+ - pack2: tomcat
+tasks:
+ -name: to update repo
+  raw: yum -y update
+  
+- name: to install {{pack1}}
+ package: name={{pack1}} state=latest
+ ignore_errors: yes
+  
+- name: to install {{pack2}}
+ yum: name={{pack2}} state=latest
+  ignore_errors: yes
+
+notify:
+   - start tomcat
+
+- name: to deploy a file
+  copy:
+  src: /root/files/sample.war
+  dest: /var/lib/tomcat/webapps/sample.war
+
+ handlers:
+- name: start tomcat
+  systemd: name=tomcat state= started
+
+save and run.
+
+ansible-playbook playbooks/pb2.yml --syntax-check
+ansible-playbook playbooks/pb2.yml
+IN your browser ::
+node_centos_ip:8080/sample
+
+Ignore_errors :: Incase a step failed then script will exucte other tasks by ignoring error.
+
+
+Playbook3 : install mysql on ubunt and mariadb on centos mahcines
+
+YOu can make two host sections one for centos and one for ubuntu or you can use when condition if you want to use all servers in one hosts:all.
+
+
+vi playbook/pb2.yml
+
+---
+- hosts:all
+ become:true
+ gather_facts=true
+vars:
+ - pack1: mysql-server-core-5.5
+ - pack2: mariadb-server
+tasks:
+ 
+-name: to update repo
+  raw: apt-get update
+  when ansible_distribution=='Ubuntu'
+  
+- name: to install {{pack1}}
+ package: name={{pack1}} state=latest
+ when ansible_pkg_mgr=='apt'
+
+ notify:
+      - start mysql
+  
+  -name to update repo
+   raw: yum -u update
+   when ansible_distribution=='CentOS'
+
+- name: to install {{pack2}}
+  package: name={{pack2}} state=latest
+  when ansible_pkg_mgr=='yum'
+   notify:
+    - start mariadb
+
+ handlers:
+  - name: start mysql
+  service: name=mysql state=started
+  
+   - name: start mariadb
+   systemd: name=mariadb state=started
+
+save and run
+
+ansible-playbook playbooks/pb2.yml
+
+
+Playbook 4 :: to use dynamic variable ::
+
+vars_prompt:
+-name: var1
+prompt: <statement>
+private:yes / no  //means at runtime when you enter value for variable it will be visible or not.
+
+
+Create an ansible playbook to add set of users in a specific group ::
+
+vi playbooks/pb3.yml
+
+---
+- hosts: all
+  become;true
+  gather_facts: true
+  vars:
+  - group1: sales
+  - group2: stock  
+  vars_prompt:
+   - name: user1
+    prompt: Enter an user
+    private: no
+   - name: user2 
+    prompt: enter an user name
+    private: yes
+
+tasks:
+  - name: to add group {{group1}}
+    group: name={{group1}} state=present
+  - name: to add group {{group2}}
+    group: name={group2}} state=present
+  - name: to add user {{user1}}
+    user: name={{user1}} group={{group1}} state=present
+  -name: to add user {{user2}}
+   user: name={{user2}} group={{group2}} state=presetnt
+
+save and run.
+
+
+
+Playbook 5 :: ansible loops ::
+
+Loops can do many things in one task,such as create lot of users,copy a set of files,install a lot of packages,e.g loop below to copy 5 files.
+
+touch file{1..5}.txt //
+tasks:
+-name: to copy files
+ copy:
+  src: /root/files/{{item}}
+  dest: /tmp/{item}}
+with_items:
+- file1.txt
+- file2.txt
+- file3.txt
+- file4.txt
+- file5.txt
+
+Create playbook to uninstall the set of packages like vim,curl,wget,tree,git-core
+
+vi playbooks/pb6.yml
+---
+-hosts: all
+ become: true
+ gather_facts:true
+ tasks:
+ -name: to remove packages
+  package: name={{item}} state=absent
+  with_items:
+  - vim
+  - git-core
+  - curl
+  - tree
+  - wget
+save and run ::
+ansible-playbook playbooks/pb6.yml
+
+Playbook 6 :: To use templates :: templates are .j2 files  which we can be used repeatedely in playbookcs by changing values based on configuration of environment.  
+
+to change port using ansible template ::
+
+Generate server.xml file for tomcat by installing tomcat on master node or copy it from some other node and generate j2 template file from it.
+apt-get install tomcat7 -y
+cp /etc/tomcat7/server.xml templates/
+cd templates
+mv server.xml sample.j2
+vi sample.j2
+Connecter port="{{myport}}"
+
+:wq
+
+vi playbooks/pby.yml
+---
+- hosts: ubnt
+ become: true
+ vars_promt:
+    - name: myport
+    prompt: Enter a Tomcat Port
+    private: no
+
+tasks:
+ - name: to install httpd
+   apt: name=tomcat7 state=latest
+ 
+- name to change port
+  template:
+  src: /root/templates/sample.j2
+  dest: /etc/tomcat7/server.xml
+
+notify:
+  - start tomcat
+handlers:
+  -name start tomcat
+   service: name=tomcat7 state=restarted
+
+
+save and run
+ansible-playbook playbooks/pby.yml  
+
+It will prompt for tomcat port enter port : 7070
+
+
+Playbook 7 ::Ansible rolls
+The ansible roles is the organized way to perform the tasks in different playbooks according to their functionality in a directory structure way
+
+Roll is a colleciton of tasks,variables,handlers, files and metadata. 
+Execution starts from main.yml of the tasks directory.
+Five directories ::
+Tasks : a series of tasks are defined here.
+handlers ::all handlers are defined here.
+vars : all variables are defined here.
+files : all files will place inside this dir.
+meta: it is used to declare role dependencies and info about role
+
+cd playbooks
+mkdir -p roles/myrole/{tasks,files,meta,handlers,vars}
+cd roles/myrole
+vi vars/main.yml
+pack1: httpd
+pack2: tomcat
+pack3: mariadb-server
+
+cd ../handlers
+vi main.yml
+- name: start httpd
+  systemd: name= state=started
+
+- name: start tomcat
+  systemd: name=tomcat state=started
+
+- name: start mariadb
+  systemd: name=mariadb state=started
+
+save
+
+cd ../files
+vi index.html
+<h1> hello from ansible roles</h1>
+
+Secondly download sample war file from google.
+
+wget https://tomcat.apache.org/tomcat-7.0-doc/appdev/sample/sample.war
+
+ls -ltr
+index.html
+sample.war
+
+
+cd ../tasks
+vi install.yml
+- name: install {{pack1}}
+  yum: name={{pack1}} state=latest
+  notify
+   - start httpd 
+
+- name: install {{pack2}}
+  yum: name={{pack2}} state=latest
+  notify
+   - start tomcat
+
+- name: install {{pack3}}
+  yum: name={{pack3}} state=latest
+  notify
+   - start mariadb
+
+
+save
+
+vi deploy.yml
+- name: to deploy .html
+  copy:
+  src: index.html
+  dest: /var/www/html/index.html
+
+- name: to deploy war file
+  copy:
+  src: sample.war
+  dest: /var/lib/tomcat/webapps/sample.war
+
+save
+
+vi main.yml
+- include: install.yml
+- include: deploy.yml
+
+ls -ltr
+install.yml
+deploy.yml
+main.yml
+
+Execute this role ::
+cd ~/playbooks
+vi pb8.yml
+---
+-host: cent
+ become: true
+ roles:
+  - myrole
+
+save
+ansible-playbook playbooks/pb8.yml --syntax-check
+ansible-playbook playbooks/pb8.yml
+
+YOu can run multiple roles also in one playbook ::
+vi pb8.yml
+---
+-host: cent
+ become: true
+ roles:
+  - myrole
+  - myrole_2
+  - myrole_3 
+save and execute pb8.yml.
+
+
+***********************************************************************************************
+
+8. Puppet
+Puppet is also cms tool like ansible but its pull based and puppet agent requires on all servers.
+
+CMS tool like ansible,puppet cut down on time spent repeating basic tasks, and help ensure that your configuration are consistent and accurate across your intasturcuture.
+
+Puppet master : this machine contains all the conifuration for different hosts
+Puppet Agent :: this is the daemon which run on all servers, which are to be managed using puppet. Puppet agent will go and ask the confiugration for itself from the puppet master server at a specific time interval.
+
+Flow : client connects to master, master analyze configuration to be applied to client and create catalog than puppet agent apply changes based on catalog and submit report to puppet master.
+
+Installation :
+i)Create three nodes, master and two slaves.
+Make ip address entry in /etc/hosts of all nodes of each other. slave node don't need to connect each other so its optional to have each other entry for slave nodes.
+
+ii)INstall and configure puppet master ::
+wget https://apt.puppetlabs.com/puppetlabs-release-trusty.dev
+
+dpkg -i puppetlabs-release-trusty.deb
+apt-get update
+apt-get install puppetmaster -y
+puppet -V
+
+vi /etc/puppet/puppet.conf
+[main]
+#templatedir=$confdir/templates
+[master]
+cert=puppet
+dns_alt_names=puppet,puppet_master_hostname_fqdn
+
+vi /etc/puppet/fileserver.conf
+Uncomment
+[extra_files]
+path /etc/puppet/files
+allow *
+
+create new  SSL file::
+cd /var/lib/puppet
+mv ssl ssl_bkp
+service puppetmaster restart //this will create nw ssl.
+
+
+iv) Install puppet agent on node2 having same os ubuntu as master node.
+wget https://apt.puppetlabs.com/puppetlabs-release-trusty.dev
+
+dpkg -i puppetlabs-release-trusty.deb
+apt-get update
+apt-get install puppet -y
+puppet -V
+
+vi /etc/puppet/puppet.conf
+
+vi /etc/puppet/puppet.conf
+[main]
+#templatedir=$confdir/templates
+[agent]       //replace master wirte agent.
+server=puppet_master_hostname
+
+
+vi /etc/default/puppet
+start=yes
+
+Tag puppet node to puppet master ::
+cd /var/lib/puppet
+rm -rf ssl
+puppet agent -t  //to send a ssl requet to master to certify agent and create new ssl.
+
+On master node except ssl reqeust ::
+puppet cert list  //list pending request.
+puppet cert list -all  //to list all reqeusts  //to accept request.
+puppet cert sign puppet_centos_node_2_hostnme //to remove request if we don't want to accept it.
+
+v) Install puppet agent on node3 having centos
+Download pacakge ::
+rpm -ivh http://yum.puppetlabs.com/puppetlabs-release-el-7.noarch.rpm
+Install puppet:
+yum install puppet -y
+--yum install puppet-server //for master but here we have to install only agent.
+
+vi /etc/puppet/puppet.conf
+server=puppet_master_hostname
+
+rm -ef /var/lib/puppet/ssl
+
+puppet agent -t //to generate new ssl and send certify requet to master.
+
+On master node ::
+puppet cert list
+puppet cert sign node3_hostanme
+puppet cert list 
+puppet cert list -a
+
+
+Puppet scritps ::
+
+Puppet code is written in manifest file with .pp extension. The defualt main manifest file is located at 
+/etc/puppet/manifest/sit.pp
+
+Resource :: a collection of tasks. Task are like install package,create a file or a user.
+Class :: a collection of resources.
+Module : collection of classes. Pre-defined modules(forge modules) and custom modules.
+
+
+Manifest 1 # Install apache and start services 
+
+vi /etc/puppet/manifests/site.pp
+
+if $operatingsystem=='Ubuntu'
+{
+exec{'update':
+command => '/usr/bin/apt-get update',
+  before => Package['apache2'] 
+   }
+package{'apache2':
+   ensure => present,
+   require => exec['update']
+   }
+service{'apache2':
+   ensure => running,
+   require => Package['apache2']
+   }
+}
+
+Run 
+
+On both agent nodes 2 and 3 run 
+puppet agent -t 
+
+or we can run it from master by creating a script as below on master node which will coonect to agent node and run same command::
+vi demo.sh
+for ip in $(cat hosts)
+do 
+ssh $ip puppet agent -t
+echo -----------
+done
+
+
+sh demo.sh
+
+
+Manifest 2 :: Class
+Class
+----- 
+Classes contain code blocks that can be invoked from anywhere in the code.Classes provide facility of code reuse.
+e.g.
+class class_name
+::::puppet code goes here :::
+}
+include class_name //to call class code.
+
+vi site.pp
+class mysql
+{
+  exec{'update':
+       command => '/usr/bin/apt-get update',
+       }
+
+   package{'mysql-server':
+        ensure=> present
+        require => Exec['update'],
+            }
+
+     service{'mysql':
+           ensure => running,
+           require => Package['mysql-server'],
+           }
+}
+
+
+class mariadb
+{
+  exec{'update':
+       command => '/bin/yum -y update',
+       }
+
+   package{'mariadb-server':
+        ensure=> present
+        require => Exec['update'],
+            }
+
+     service{'mariadb':
+           ensure => running,
+           require => Package['mariadb-server'],
+           }
+}
+
+if $operatingsystem == 'Ubuntu'
+{
+include mysql
+}
+elsif $operatingsystem == 'CentOS'
+{
+include mariadb
+} 
+       
+save your class file.
+
+Run 
+sh demo.sh
+
+
+Manifest 3 :: Inheritence ::
+
+Inheritance :: We can extend the functionality of the previous class without copy/pasting entire class. Allows subclasses to override resource settings defined in parent class. A class can only inherit from one other class, means multiple inheritance is not allowed.
+
+
+Create puppet manifest for inheritance ::
+
+
+class base
+{ 
+file{'devops.txt':
+ path => '/opt/devops.txt',
+owner => root,
+group => root,
+mode => 555,
+ content => 'Hello from Base class..!'
+ }
+}
+class derived inherits base
+{
+  user{'john':
+   ensure => present,  
+   }
+  group{'sales':
+   ensure => present,
+       }
+
+File['devops.txt']
+   {
+    owner => john,
+    group => sales,
+    mode => 777
+    content => 'good day from derived class..!'
+   }
+}
+include derived
+
+run demo.sh
+
+Manifest 4 :: Variables ::
+Variables
+---------
+Puppest supports vairalbes like most other languages, denoted by $.
+
+Arrays
+------
+to store multiple values
+['one', 'two', 'three']
+
+e.g.
+host{'one.example.com':
+ host_aliases => ['sathya','tech','hyd'],  --> this is array having multiple aliases names for our host site.
+  ip => 192.178.89.1,
+ensure => present,
+}
+
+
+vi /etc/puppet/manifess/site.pp
+class demo
+{
+$data='hello from puppet master ..!'
+$ip_addr='172.217.214.113'
+
+file{'/tmp/demo.txt':
+  ensure => present,
+   content => $data
+   }
+  host{'google.com':
+  host_aliases => ['google','go','demo'],
+ ip => $ip_addr
+  }
+
+}
+   
+include demo
+
+Save and run.
+sh demo.sh
+
+ON node 2 and 3
+you can test ::
+ping google
+ping go
+ping demo  //you will same server in all pings.
+
+
+Templates
+---------
+templating is a method of getting things in a standard format, which can be used in multiple locations.
+support in erb format that is enterprise ruby.
+
+Template play important role in configuration files.
+haproxy.cfg, dav-svn.conf, pupet.conf,ansible.cfg.
+
+
+evaluting tempalte ::
+$value = template("testtemplate.erb")
+
+
+cd /etc/puppet/templates
+vi /etc/puppet/manifests/site.pp
+
+   file{'/etc/dev_svn.conf':
+    ensure => present,
+  content=> template('/etc/puppet/templates/test.erb')
+       }
+
+
+Manifest 5 :: Puppet modules 
+Puppet Modules
+--------------
+an organised collection of classes/manifests.
+cd /etc/puppet/modules.
+
+A large puppet code can be distributed into multiple manifests and organised using modules(install,configure and start apache service - where each of these tasks are split into different classes.
+
+Predeinfed modules :: forge modules
+User defined :: custom
+
+cd /etc/puppet/modules
+mkdir -p nginx/manifests
+vi init.pp
+class nginx
+ {
+   exec{'update':
+     command => '/usr/bin/apt-get update',
+     before => Package['nginx'],
+   }
+
+  package{'nginx':
+     ensure => present,
+     require => Exec['update'],
+     notify => Service['nginx'],
+   }
+  service{'nginx':
+       ensure => running,
+       subscribe => Package['nginx'],
+   }
+}
+
+save.
+
+//subscribe means .. this task will be excuted after the mentioned one.
+
+vi /etc/puppet/manifests/site.pp
+
+node 'fqdn of ubuntu node'{
+include nginx
+}
+
+save
+
+sh demo.sh
+
+Paste node-2 ip in browser. you will get nginx.
+
+
+Manifest 5 :: install apache , deploy index.html and run module.
+cd /etc/puppet/modules
+mkdir -p webserver/{files,manifests}
+cd webserver/files
+vi index.html
+<h1>Hello from puppet modules</h1>
+
+save
+
+cd ../manifests
+vi install.pp
+
+class install
+ {
+   exec{'update':
+     command => '/usr/bin/yum update',
+     before => Package['httpd'],
+   }
+
+  package{'httpd':
+     ensure => present,
+     require => Exec['update'],
+     
+   }
+   file{'index.html':
+       path=> '/var/www/html/index.html',  
+       source => 'puppet:///moudles/webserver/index.html',
+       require => Package['httpd']
+          notify => Service['httpd']  
+      }
+      service{'httpd':
+       ensure => running,
+       subscribe => File['index.html'],
+   }
+}
+
+save
+
+vi user.pp
+class users
+{
+group{'finance':
+     ensure => present
+     before => user['sai'],
+      }
+     user{'sai':
+     ensure => present,
+      }
+}
+
+save
+
+vi init.pp
+class webserver
+{
+include install
+include users
+
+}
+
+save
+
+Now we have 3 manifest in this dirctory.
+
+vi /etc/puppet/manifests/site.pp
+
+node 'node_3_centos_fqdn'{
+
+include webserver
+
+}
+
+save and run.
+
+sh demo.sh
+
+
+YOu can see tree structure 
+
+tree /etc/puppet/modules/
+
+
+
+Predefined moudles ::
+---------------------
+
+https://forge.puppet.com/modules
+
+here you can find modules ::
+search tomcat for tomcat module.
+same mysql,mariadb etc.
+
+The puppet forge modules can be quickly installed with build-in puppet module command.
+
+e.g. puppet module install puppetlabs-apache
+
+
+cd /etc/puppet/modules
+puppet module install puppetlabs-mysql --version 3.10.0
+puppet module install mayflower-php --version 4.0.0-beta1
+
+ls //there will be mysql and php modules available. Now to run them ::
+
+vi /etc/puppet/manifest/site.pp
+include'::mysql::server'
+include '::php'
+
+ON run demo.sh on master or do manuallly on agent ::
+puppet agent -t
+mysql
+php -v
+
+*********************************************************************************
+
+
+9. CHEF
+
+Terminology ::
+Recipes :: fundamental configuration element with in an organization.
+
+Cookbook :: Set of recipes, a cookbook can have a defualt recpie(default.rb)
+
+CheF client :: Agent that runs locally on the node that is registered with the chef server.
+
+Knife :: command line tool which provides an interface between the local chef-repo and chef-server.
+
+Client.rb : Configuration file for chef-client located at /etc/chef/client.rb on each node.
+
+Ohai :: tools used to detect attributes on a node and then provide attributes to chef at the start of every chef-client run. Its like setup (anisible), factor(puppet) to get node facts.
+
+Node object :: consistes of run-list and node attributes that describe of the node.
+
+
+Chef-Repo :: Located on workstation and installed with starter kit, should be synchronized with a version control system and stores cookbooks,roles,data bags,environments and configuration files.
+
+
+Indempotence :: Means a recipe can run multiple times on the same system and the results will always be identical and does not change the state of machine/node. Ansible and puppet has also this feature.
+
+
+Chef server ::
+
+Open source chef :: this is completely free and open source checf, which you can install anywhere. You have to create servers,isntall chef.
+
+Hosted chef :: This is paid after 20 nodes. where code will manager your central chekc server, which you can access/configure using web interface. This makes you free from reponsiblity of managing a central check server yourself. For this we need to create an account on www.manage.chef.io .
+
+
+Configuring Chef server,workstation and chef nodes ::
+-----------------------------------------------------
+1.) Create hosted chef server
+
+Go to www.manager.chef.co -- get started 
+name,company,email_id,username
+create a new organization -- 
+full name ::: demo
+short name :: dem
+
+Download starter kit -- link button to download startter kit.
+
+Hosted chef-server is ready.
+
+2.) Now create aws or google instnaces for workstations and nodes.
+chef-node1  -- ubuntu
+chef-node2 -- centos
+chef-ws   -- ubuntu node_3.
+
+
+3.)Configure ssh between workstion node and chef-nodes.
+
+/*Logging into google cloud instance using putty::
+
+goto puttygen -- generate --  key comment :: john   //this is username to login.
+copy the public key content under ::
+public key pasting into OpenSSh authorised_keys_file.
+
+
+ON google cloud -- in left panel -- metadata -- ssh keys
+edit -- add key -- paste your public key content here and save.
+
+Now on same puttygen screen where public key was generated -- click save private key --yes -- select folder to save -- close.
+
+Open putty -- 
+connection --ssh-auth -- select your key
+connection - data -- autologin username -- john
+session -- external_ip/public-ip of node  ... */
+
+
+Change root password and permit root login::
+ON chef  node1 and node2
+sudo su - 
+passwd root
+
+vi /etc/ssh/sshd_config
+PermitRootLogin yes
+PasswordAuthentication yes
+
+:wq
+
+restart ssh service
+service ssh restart  //on node1
+systemctl restart sshd  //on node2
+
+
+Get both nodes IP and fqdn
+hostname -i
+hostname -f
+
+ON workstation node ::
+sudo su - 
+ssh ip of node1 and node2 --give root pwd you should be able to connect.
+
+Now configure passwordless login ::
+ssh-keygen // press enter enter don't give any values.
+ls -a
+cd .ssh
+ls
+ssh-copy-id pulbic_ip_chef_node1
+ssh-copy-id pulbic_ip_chef_node1
+
+Now you can ssh from workstation node to chef_node1 & 2 without password.
+
+4.) Chef workstation installation 
+
+i)Download the latest chef development kit ::
+
+wgt https::/opscode-omnibus-packages.s3.amazonaws.com/ubuntu/12.04/x86_64/chefdk_0.5.1-1_amd64.deb
+
+ii)Install chefDK package ::
+
+sudo dpkg -i chefdk_0.5.1-1_amd64.deb
+
+iii)Remove install file
+
+rm chefdk_0.5.1-1_amd64.deb
+
+iv)Verify  installation::
+
+chef verify
+
+v) Generate chef repository 
+
+/*
+Optional step no need to do this , as this step doesn't generate knife.rb so of no use.
+chef generate repo chef-repo
+ls
+/*
+
+download start kit -- login to hosted chef server -- action -- start kit --download start kit.
+
+copy this chef-starter.zip to linx machine using winscp.
+
+cp chef-starter.zip ~/    //root home.
+
+cd ~/
+apt-get isntall unzip -y  //if unzip is not installed.
+unzip chef-starter.zip
+
+cd chef-repo
+ls -la
+cd .chef
+knife.rb userame_devops.pem  (private_key thorugh which workstation  will connect to chef server.)
+
+cd ..
+knife node list  //currently there are no nodes.
+
+
+vi) Installing chef client and Register nodes
+
+On workstation node ::
+
+cd chef_repo
+
+knife bootstrap node_ip_address_chef_node_1 -x root -P root_pwd -N "ani_node1"
+
+knife bootstrap node_ip_address_chef_node_2 -x root -P root_pwd -N "ani_node2"
+
+
+
+Now you can login to www.manage.chef.io  and check your nodes or use below commands ::
+knife node list
+
+Coockbooks
+----------
+
+i)knife.rb contains chef -server url used by workstation to connect to chef server.
+ii)/etc/chef/client.rb :: client connects to chef server using this file.
+iii) log level info :: vi client.rb -- add line on both chef_nodes 1 and 2.
+log_level :info
+iv) ohai :: to get node info/attribute like setup(ansible) factor(chef).
+
+filter :: ohai | grep platform,
+v) recipe :: fundamental unit (task) , each cookbook has default recipe default.rb . we can write other recipies but we have to include them in default.rb.
+
+recipies are used ::
+install and configure software componenets.
+manage files (create,delete,copy)
+deploy applications
+manage use and groups.
+execute other recipes and more.
+
+vi) cookbooks :: recipes are stored in cookbooks. 
+cookbook contains recipes,templates,files,custom resources.
+
+knife cookbook create myapache
+vi chef-repo/cookbooks/myapache/recipes/default.rb
+
+Recipes are stored in cookbooks.
+Cookbooks contain recipes,templates,files,custom resources.
+
+To create a cookbook:
+chef generate cookbook <cookbook_name>
+  or
+knife create cookbook <cookbook_name>
+
+
+Cookbook 1 ::
+On workstation server ::
+sudo su -
+cd chef-repo/cookbooks
+chef generate cookbook myapache
+ls -ltr
+cd myapache
+cd recipes
+vi default.rb
+execute "update" do
+command "apt-get update"
+end
+
+apt-package "appache2" do 
+action :install
+end
+
+service "apache2" do
+action :start
+end
+
+save
+
+UPload cookbook to chef server ::
+cd ../../..
+pwd
+chef-repo
+knife  cookbook upload myapache
+
+check on chef server url ::
+Policy   tab  // you can see your cookbook.
+
+
+Assign cookbook to node run list ::
+
+knife node run list add node1 recipe["myapache"]
+
+knife node show node1   //to confirm cookbook is added.
+
+
+Agent will pull this and excute::
+
+On node-1 chef node 1 ::
+chef-client    //this command will execute the cookbook on node-1.
+netstat -lntp  //apache will be running on port 80.
+
+
+If you make any changes to cookbook you need to upload it again to chef server.
+
+For centos mahcine ::
+ON workstation ::
+cd chef-repo/cookbooks
+chef generate cookbook myhttpd
+cd myhttpd/
+mkdir files
+vi files/index.html
+<h1> hello from chef_workstation- node-1</h1>
+
+cd recipes
+
+vi default.rb
+execute "update" do
+command "yum -y update"
+end
+
+yum-package "httpd" do 
+action :install
+end
+
+cookbook_file "/var/www/html/index.html" do
+source "index.html"
+mode "0644"
+end
+
+service "httpd" do
+action :start
+end
+
+save
+
+cd ../../
+knife cookbook upload myhttpd
+knife cookbook list
+knife node run list add node2 "recipe[myhttpd]"
+knife node show node2 
+knife cookbook delete <cookbook_name>  //to delete a cookbook.
+
+Now to execute it on node-2, we can run directoy from workstation using below command ::
+knife ssh 'name:node2' 'chef-client'
+
+ON node-2 
+netstat -lntp
+Paste its pulic ip in browser you can see your index.html code.
+
+
+Run the chef-client command from DK
+-----------------------------------
+knife ssh 'name:node1' 'sudo chef-client' -i key
+knife node show node1
+knife node show node1 -l //to get full details.
+to list in json format ::
+knife node show node1 -Fj
+To find hostname of node 
+knife node show node1 -a fqdn
+
+Using conditionals 
+------------------ :: conditionsals can be used to dynamically decide whether or not a block of code should be executed, based on a variable or an output from command.
+
+
+cookbook 2 :: sqldb and maridb on ubuntu and maridb 
+
+chef generate cookbook mysql
+cd mysql
+cd recipes
+vi default.rb
+if node['platform']='ubuntu'||node['platform']=='debian'
+execute "update" do
+command "apt-get update"
+end
+
+package "mysql-server" do
+action :install
+end
+service "mysql" do
+action :start
+end
+end
+
+Now create one more rb file
+vi test.rb
+if node['platform']='centos'||node['platform']=='redhat'
+execute "update" do
+command "yum -y update"
+end
+
+package "mariadb-server" do
+action :install
+end
+service "mariadb" do
+action :start
+end
+end
+
+save
+
+vi default.rb
+at end write this line to include test.rb
+
+include_recipe "mysql::test"
+
+save.
+cd ../..
+knife cookbook upload mysql
+knife node run list add node "recipe[mysql]"
+knife node show node1
+
+Now if we run chef-client it will apply all recipes. So delete old recipes.
+
+knife node run list remove node1 "recipe[myapache]"
+knife node show node1
+knife ssh 'name:node1' 'chef-client'
+
+knife node run list add node2 'recipe[mysql]
+chef-client -r "recipe[mysql::test]"
+
+//above command will run specific recipe(test.rb) from a sepcific cookbook(mysql)
+
+
+cookbook 3 :: Create cookbook to install java and tomcat pacakges and deploy sample.war file.
+
+cd cookbook
+chef generate cookbook mytom
+cd mytom
+vi detault.rb
+
+execute "update" do
+command "yum -y update"
+end
+
+execute "java" do 
+command "yum install -y java"
+end
+
+yum_package "tomcat" do
+action :install
+end
+
+cookbook_file "/var/lib/tomcat/webapps/sample.war" do
+source "sample.war"
+mode "0644"
+end
+
+service "tomcat" do
+action :start
+end
+
+save
+
+cd files 
+downlaod sample.war file for tomcat and copy in files directory.
+wget https://tomcat.apache.org/download_link
+
+vi metadata.rb
+change version :: 0.2.0  //its option to change version.
+
+knife cookbook upload mytom
+knife cookbook list
+knife node show node2
+
+Instead of removing or choosing a spcific recipe to run from command linee we can make this recipe as current from browser ::
+
+action - edit run list -- available recipes--drag and drop mytom from avaialable recipes to current recipes.
+
+knife node show node2 .
+knife ssh 'name:node2' 'chef-client'
+
+
+
+
+DataBags
+ 
+
+
+Databag is a store of data. It's a group of json files, each being a databagitem and containing json converted to a mash to be used in recipes when loaded. the main purpose of 
+databags is to store common objects(a list of admin users etc.).
+Data which is common to all nodes.
+
+
+Create a data bags:
+------------------
+On workstation node 
+cd chef-repo
+mkdir -p data_bags/users
+knife data_bag create users
+
+vi data_bags/users/ram.json
+{
+"id": "ram",
+"comment": "ram raj from admin",
+"uid": "2000",
+"gid": "0",
+"home": "/home/ram",
+"shell": "bin/bash"
+}
+
+vi data_bags/users/krishan.json
+{
+"id": "krishan",
+"comment": "krishan raj from hr",
+"uid": "2001",
+"gid": "0",
+"home": "/home/krishan",
+"shell": "bin/bash"
+}
+
+create data bag items ::
+
+knife data_bag from file users ram.json
+knife data_bag from file users krishan.json
+
+
+Now create one more data bags groups ::
+cd chef-repo
+mkdir data_bags/groups
+knife data_bag create groups
+vi data_bags/groups/sales.json
+{
+"id": "sales",
+"gid": "3000",
+"members": "ram","Krishan"
+}
+save
+
+knife data_bag from file groups sales.json
+
+
+Now these two data bag items can be accessed by all nodes.
+
+to search all items in users data bag::
+knife search data-bag_name "*:*"    // *:* means all the items.
+knife search users "*:*"
+knife search sales "*:*"
+
+knife search user "id:ram"  //if we need only user ram details in user databag.
+knife search user "id:ram" -a "shell" //if we user ram's shell details.
+
+
+How to use this data_bags::
+
+cookbook-4 :: cookbook to add users
+
+knife cookbook create myusers
+vi cookbooks/users/recipes/default.rb
+
+search("users","*:*").each do |user_data|
+user user_data["id"] do
+comment user_data["comment"]
+uid user_data["uid"]
+gid user_data["gid"]
+home user_data["home"]
+shell user_data["shell"]
+end
+end
+
+
+this will fetch all users one by one from databag users into user_data variable and create users and assign other parameters from databag item.
+
+vi cookbooks/myusers/recipes/groups.rb
+search("groups","*:*").each do |group_data|
+group group_data["id"] do
+gid group_data["gid"]
+members group_data["members"]
+
+end
+end 
+
+save
+
+vi cookbooks/myusers/recipes/default.rb
+add this line at 
+
+include_recipe "myusers::groups"
+
+save.
+
+knife cookbook upload myuser
+
+
+YOu can login to chfe server url ::
+see databags -- you can see your databags.
+
+You can add bag item from url also by writing json format code.
+
+For both nodes change the current recipe ::
+action - edit recipe -- drag myuser recipe to current recipies.
+
+knife node show node1
+knife node show node2
+On chef-node-1
+chef-client   
+chef-client -r myusers:group  //if group.rb recipe is not detault.rb. 
+chef-client -r <cookbook_name>:<recipe_name>
+
+
+ON chef node 2 ::
+chef -client
+chef -client -r myusers::default  //if myuser is not current cookbook.
+
+Chef roles
+-----------------   :: roles are set of recipies and roles.
+ 
+
+Role :: Roles allow you to conveniently encapsulate the run lists and attributes required for a server to be what you already think it is. IN practice roles make it easy to configure many nodes identically without repeating yourself each time.
+
+
+Every chef organization begins with a single envrionment called the _default environment, which cann't be modifeid or deleted. Additional environments can be created ,such as production,staging ,testing and development. Generally, an environment is also associated with onr or more cookbook versions.
+Environment is a logical group of nodes. A node can belong to one environment only.
+
+Envrionment have names.
+Enrionments have description.
+envrionment can have one or more cookbook constraints.
+=equal to.  E.g. Like = myapache for dev, =tomcat for prod environment.
+There are other options but equality is the  recommended practice.
+
+Create envrionments ::
+kinife environment list
+i) make directory
+cd /chef-repo
+mkdir environments
+vi envrionments/dev.rb
+name "dev"
+description "For developers!"
+cookbook ="myapache", "= 0.1.0"
+
+save
+
+knife environment from file dev.rb
+kinife environment list  //now you can see two environment dev and default.
+
+
+vi environment/prod.rb
+name "prod"
+description "For production!"
+cookbook ="mytom", "= 0.2.0"
+
+save
+
+knife environment from file prod.rb
+kinife environment list 
+
+
+Login to chef server URL :::
+
+select node 1  -- details
+environment -- assign dev environment.
+
+select node 2 --details 
+envrionment -- assign prod envrionment.
+
+or using command line ::
+knife node environment_set node1 dev
+knife node environment_set node2 prod
+
+Chef supermarket 
+----------------
+Supermarket is the chef community's central clearing house for sharing cookbooks,tools and plugins.
+
+You can get predefined cookbooks from supermarket.
+
+It is a place for chef community membetrs to download community cookbooks,collaborate on cookbooks, and uoload cookbooks to be used by other communtiy members.
+
+It is also place to share information about tools that improve chef's ecosystem. Supermarket makes it easier to start participating in chef's open source projects by allowing individuals and corporations to sign and manage their contributor license agreements(CLA's) .
+
+https://supermarket.getchef.io
+
+search -- write -- tomcat cookbook,//ly jboss,weblogic,webspecher etc.
+
+you will get cookbook, who has deveoped it etc.
+
+
+browsing supermarket from command line ::
+knife cookbook site list
+knife cookbook site search tomcat7
+knife cookbook site show tomcat7   // to see versions availalbe for a cookbook.
+knife cookbook site show tomcat7 0.1.0 //to get a partiucalt version.
+
+knife cookbook site download tomcat7 //it will download all versions of tomcat7 in gunzip file.
+nife cookbook site download tomcat7 0.1.0 //to download a particular version.
+knife cookbook site install tomcat7
+You can create a git repository to hold installation versions :::
+apt-get update 
+apt-get isntall git-core
+git -version
+git init   // to initiliaze or create empty repository.
+git add *  // to move the code to stage area
+git commit -m "first code"  //to move code to LR.
+
+
+Chef has a strong commnuity then puppet and ansible so we can use this CMS tool over  these.
+To Install you chef server
+
+
+Install own Chef server ::
+
+search oper source chef server in browder ::
+https://docs.chef.io/install_server.html
+
+You will get document to isntall own chef server follow doc as per your os.
+
+Create a new machine on google cloud -- ubunt machine
+
+
+SSH CONNECT to chef-server machine 
+
+i) download chef server package ::
+LInk :: https://downloads.chef.io/chef-server and copy the download link.
+
+wget https://packages.chef.io/files/stable/chef-server/12.17.33/ubuntu/16.06/chef-server-core_12.17.33-1amd64.deb
+
+ii) Install package 
+dpkg -i chef-server-core_12.17.33-1_amd64.deb
+
+iii) Chef server is installed.  Now confiugre it ::
+
+chef-server-ctl reconfigure
+
+iv) Create an administrator 
+chef-server-ctl user-create USER_NAME FIRST_NAME LAST_NAME EMAIL 'PASSWORD' --filename /path/to/server_key_file.pem   // Generate key using command ssh-keygen give private key file path.
+
+Login to server with root ::
+key-gen --- press enter enter.
+
+chef-server-ctl user-create USER_NAME sathyatech sathya sathy@gmailcom  'abc123' --/root/.ssh/id_rsa
+
+  
+v) Create an organization 
+chef-server-ctl org-create short_name 'full_oragnization_name' --association_user administrator-user_name --filename ORGANIZATION-validator.pem
+
+chef-server-ctl org-create devops 'satrhyadevops' --association_user sathyatech --filename /root/.ssh/id_rsa
+
+
+vi) 
+chef-server-ctl install chef-manage
+chef-server-ctl reconfigure
+chef-manager-ctl reconfigure
+
+vii) Paste your chef-server ip in browser ::
+Login name :: admin user name :satyatech
+pwd
+
+YOu can see your oraganization.
+
+Now you can create workstation , nodes, recipes,roles and environments.
+
+
+Chef command summary :-
+---------------------
+knife bootstrap node_ip_address_chef_node_1 -x root -P root_pwd -N "ani_node1"
+
+knife bootstrap node_ip_address_chef_node_2 -x root -P root_pwd -N "ani_node2"
+
+knife node list
+ohai :: to get node info/attribute like setup(ansible) factor(chef)
+knife create cookbook <cookbook_name>
+knife  cookbook upload <cookbook_name>
+knife node run list add node1 recipe["<cookbook_name>"]
+knife node show node1
+chef-client   
+chef-client -r myusers:group  //if group.rb recipe is not detault.rb. 
+chef-client -r <cookbook_name>:<recipe_name>
+knife ssh 'name:node2' 'chef-client'  //to run cookbook from workstation node.
+knife cookbook delete <cookbook_name>
+knife node show node1 -a fqdn
+
+
+Instead of removing or choosing a spcific recipe to run from command linee we can make this recipe as current from browser ::
+action - edit run list -- available recipes--drag and drop mytom from avaialable recipes to current recipes.
+
+knife node show node2 .
+knife ssh 'name:node2' 'chef-client'
+
+knife data_bag create users
+knife data_bag from file users ram.json
+knife search data-bag_name "*:*"
+knife search user "id:ram" -a "shell"
+
+knife environment from file prod.rb
+knife node environment_set node2 prod
+
+
+browsing supermarket from command line ::
+knife cookbook site list
+knife cookbook site search tomcat7
+knife cookbook site show tomcat7   // to see versions availalbe for a cookbook.
+knife cookbook site show tomcat7 0.1.0 //to get a partiucalt version.
+
+knife cookbook site download tomcat7 //it will download all versions of tomcat7 in gunzip file.
+nife cookbook site download tomcat7 0.1.0 //to download a particular version.
+knife cookbook site install tomcat7
+
+********************************************************************************************************
+
+10. DOCKER
+
+Docker terminology :
+--------------------
+
+Image :: an image is collection of files and some meta data.
+Images are made of layers,conceptually staked on top of each other. 
+Images can share layers to optimize the disk usage, transfer times and memory usage.
+
+
+Differences between image and container
+----------------------------------------
+An image is read only file system.
+A container is an executable form of image.
+A container is an encapsulated set of processes running in read-write copy of the file system.
+"Docker run" starts a contianer from a given image.
+
+Containers has process,files,applications,users/groups memory etc. Its like a light weight machine.
+
+How to get image ::
+---------------------------
+
+docker pull :: it will pull an image from docker hub.
+docker commit :: save all the changes made to a contianer into a new layer and create a new image.
+docker build :: It will create an image by using dockerfile.
+
+ 
+
+
+Docker installation
+-------------------
+
+hub.docker.com  //global repsository.
+
+Local respository (trusted repo) we have to create.
+
+Create your account on hub.docker.com.
+
+Search "docker install ubuntu" , or use below link for ubuntu::
+https://docs.docker.com/install/linux/docker-ce/ubuntu/
+
+Create a ubuntu mahicne on aws ubuntu machine ::
+
+Setup Docker repostiry ::
+-------------------------
+
+1.)apt-get udpate
+2.) Install packages to allow apt to use a repository over HTTPS:
+
+sudo apt-get install \
+    apt-transport-https \
+    ca-certificates \
+    curl \
+    gnupg-agent \
+    software-properties-common
+
+3.) Add Docker’s official GPG key:
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+
+4.) Use the following command to set up the stable repository
+
+sudo add-apt-repository \
+   "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
+   $(lsb_release -cs) \
+   stable"
+
+
+INstall docker CE(community edition) there is also enterpirse edition ::
+
+1. sudo apt-get update
+
+
+2. Install the latest version of Docker CE and containerd or you get install a specific version by skiping to step 3 .
+
+sudo apt-get install docker-ce docker-ce-cli containerd.io
+
+3.  do this step if want to skip step 2.
+List the version available ::
+apt-cache madison docker-ce  //this command will list version, you can select the one which of your OS 
+
+Install the desried version by getting version from above command::
+
+sudo apt-get install docker-ce=<VERSION_STRING> docker-ce-cli=<VERSION_STRING> containerd.io
+
+
+
+4. Verify that Docker CE is installed correctly by running the hello-world image
+
+sudo docker run hello-world
+
+docker --version
+
+
+Creating images containers and running containers in host ::
+
+ 
+
+A host can run multiple containers.
+
+Commands ::
+
+Image commands ::
+images - list all local images.
+run : create container from an image and execute a command in it.
+tag - tage an image
+pull - download image from repository
+push - to push an image to docker hub.
+rmi - delete a local image. This will remove intermediate images if no longer used.
+
+Container commands ::
+ps - list all running contianers.
+ps -a -- Listt all conatiners (including stopped)
+top - display processes of a container
+start - start a stoped container
+stop - stop a running contianer
+pause - pause all processes within a container
+rm - delete a container
+commit - create an image from a container
+attach - to enter to running container
+ctrl pq  // we can exit contianer but container will run in background.
+
+ps -aq -- list all contianer_ids.
+rm -$(docker ps -aq)  // to rm all container.
+
+docker ps -aq
+docker rm container_id
+docker rm $(docker ps -aq)
+
+docker images
+docker images -aq
+docker rmi image_id
+docker rmi $(docker images -aq)
+
+docker run ubuntu 
+docker ps -a  //one container is created but status will be exited as contianer has stopped after creation.
+
+docker run -it ubuntu   //it stands for intractive terminal.
+
+Now this time you are in continer.
+Install apache in this contianer.
+
+cat /etc/os-release
+
+apt-get update
+apt-get install apache2
+
+Now we have to create image for that we have to get out of continer but if we quit continer it will exit, so use option control pq.
+
+ctrl pq  // we can exit contianer but container will run in background. 
+
+docker ps  //you can see your container in running status.
+docker commit <container_id> my_image
+
+docker images
+
+you can see two images ::
+myimage and ubunt(base image)
+
+Deleting contianer and images
+------------------------------
+docker rmi ubuntu //this delete image command will fail as container is using this image
+
+docker ps -aq
+docker ps -q   // to see running contianers.
+docker stop <continaer_id>
+docker rm $(docker ps -aq)
+
+docker rmi ubuntu  //it won't delete all layers as child image myimage is using they layers. But now as continer is delted this image will delete.
+
+
+docker rmi myiamge  //this will remove all layers.
+
+
+-----------------------------------------------
+Now create a tomcat:8.0  
+-----------------------
+
+docker run -d tomcat:8.0  // -d stands for detached mode. Means container service will run in background but we don't enter to container like -it (interactive mode)
+
+netstat -lntp  // you will see port 8080 is not used.
+
+docker ps  // as tomcat is running in docker container so port8080 will be running here in docker container.
+
+Now we have to do port mapping .
+
+docker stop <cid>
+docker run -d -p 8080:8080 tomcat8.0
+
+docker ps
+netstat -lntp
+
+Paste the mahcine_ip:8080 in browser.
+
+Now if we want to create one more container from it. then as container port 8080 is already mapped to first container we have to give different port for new container.
+
+docker run -d -p 9080:8080 tomcat8.0
+
+netstat -lntp
+
+docker ps
+
+Docker port mapping :: is a process of redirecting container port to its host machine. In this case the docker host will get the services of multiple containers.
+
+Means container services we can access in host mahcine.
+
+Now host can access files of containers.
+We have isntalled tomcat which has webapps as deployment directory.
+
+docker ps -q  //to see running containers.
+find / -iname webapps    //you can webapps inside your contianers /var/lib/dockers/aufs/mnt/<cid>
+
+YOu can cd to webapps directory
+cd /var/lib/dockkers/.. /webapps/ROOT
+vi index.html
+<h1> hello from Docker engine ..!</h1>
+
+Now public_ip:8080, you can see content of your file.
+
+---------------------------------------------------------
+
+Now create a fresh contianer ::
+docker ps -q  // list all running docker container_ids.
+docker rm $(docker ps -aq)  remove all docker containers.
+
+docker ps -q or cd /var/lib/docker/containers
+docker run -d -p 8080:8080 tomcat:8.0
+netstat -lntp
+docker ps
+
+In browser :: machine_ip:8080
+
+Create another container ::
+docker run -d -p 9080:8080 tomcat:8.0
+
+machine_ip:9080
+
+
+Now deploy file index.html
+/var/lib/tomcat/webapps //default path for tomcat deployment.
+
+find / -iname webapps
+cd <path to webapp for required container>
+
+cd /var/lib/docker/aufs/mnt  //this directory has multiple layers.
+
+You can deploy a file index.html in webapps directory.
+
+----------------------------------------------------
+
+Prepare own image and uplaod to docker hub
+
+i) Create container from ubuntu image from docker hub.
+docker run -it ubuntu
+Now container is created and you are inside container
+cat /etc/os-release
+apt-get update
+
+apt-get install mysql-server -y
+ctrl pq 
+
+ii) Now convert contianer to image 
+
+docker image //list images.
+dcoker rmi image_name  //remove unwanted images.
+
+docker commit <continer_id> mysql  //it will create mysql image from the container we created.
+
+iii) Now upload this image to docker hub (public repository)
+
+
+Now login to docker
+
+ON your host machine 
+docker login
+Username :: sathyadevops
+password 
+
+//username and password which you used to create account on docker hub.
+
+
+docker push mysql 
+As mysql is official image on docker-hub, so change its name by giving a tag.
+
+docker tag mysql sathyadevops/mysql_1
+
+docker images
+
+docker push sathyadevops/mysql_1
+
+
+Once its pushed others can use this image from docker hub.
+
+Now you login to docker-hub url and see your image.
+hub.docker.com
+
+
+How to get container and image details
+--------------------------------------
+docker ps -q
+docker inspect cid  //it will display container details.
+docker inspect cid | grep IPAddress
+
+docker images
+docker inspect image_id
+
+To check network ::
+
+docker network ls 
+docker network inspect  cid
+docker network inspect  host
+docker network inspect bridge
+
+to start/stop service running in a contianer like sql or http etc. It will not stop container but it will stop a service running inside a container.
+docker start cid
+docker stop cid  
+docker pause cid
+docker resume cid
+
+How to enter a running continer ::
+docker attach cid
+
+docker run -itd centos /bin/bash/
+yum install httpd -y
+docker commit cid centos_httpd
+
+
+
+Sharing a file to multiple docker containers ::
+-----------------------------------------------
+
+Dockers volume
+--------------
+How to send a file from host mahcine to multiple containers.
+Use command copy and add.
+
+But currently we have to share not copy ::
+A docker volume is a common memory area to store files which can be accessed by multiple contianers.
+Containers can create files in this area, and also drop files. but if a contianer dropped a file it won't be avialable for other containers too.
+
+features ::
+Docker volume are intilized when container is created.
+They can be shared and also reused amongst many contianers.
+Any changes to the volume itself can be made directly.
+They exists even after the container is deleted.
+
+docker run -it -v /root/files:/files ubuntu
+
+
+Lab ::
+docker stop $(docker ps -q)
+docker rm $(docker ps -aq)
+
+mkdir -p /root/myvol
+vi devops.txt
+Hello from docker
+it is host mahcine
+save
+
+cd
+docker run -it -v /root/myvol:/myvol ubuntu
+
+NOw a new continaer is created and you can see myvol in container.
+
+ls -ltr
+
+cat devops.txt
+
+echo 'hello from continaer_1' > file1.txt
+
+ctrl pq  // don't exit do ctrl pq because exit stops continers.
+
+Now create one more container ::
+docker run -it -v /root/myvol:/myvol ubuntu
+cd myvol
+cat file1.txt
+
+echo 'hello from continaer_2' > file2.txt
+
+rm DEVOPS.txt  // now container 2 deleted file.
+
+ctrl pq
+
+docker ps
+docker attach cid_1
+
+cd /myvol
+ls  //devops.txt is not there.
+
+
+Dockerfile
+----------
+
+How to generate images from docker file.
+---------------------------------------
+
+Let us suppose we need an image with apache mysql and tomcat. Now on docker hub we won't get an image which has all this togather. There will be three images for these three.So in this case we have to set our own image using docker file.
+
+Docker file is a build script which can create a specific image.
+Docker file create images automatically using a build script: <<Dockerfile>>
+Can be versioned in a version control system like git,svn alomg with all dependecies.
+Docker hub can automatically build images based on dockerfiles on github. 
+
+Commands in docker file 
+-----------------------
+COPY :: copies file from host system to container.
+ADD :: download file from remoter serve and copies file from host to continer
+CMD :: command that runs when continaer starts.
+ENV : SETS an environment variable in the new container.
+EXPOSE :: opENS A PORT FOR LINKED CONTAINERS.
+MAINTAINER : an optional value for the maintainer of the script.
+RUN : Executes a command and save the result as a new layer.
+USER :: sETS the default user within container.
+VOLUME : creates a shared volume that can be shared among containers or by the host machine.
+WORKDIR : set the default wokring directory for the continaer.
+
+ 
+
+Lab ::
+
+Create an aws mahcine and ssh login.
+
+docker stop $(docker ps -q)
+docker rm $(docker ps -aq)
+docker rmi $(docker images -q)
+
+
+docker rmi image_id  //remove one by one.
+
+Docker file # 1
+
+cd 
+mkdir dir1
+vi Dockerfile
+FROM ubunut
+RUN apt-get update
+RUN echo "create Docker Image"
+CMD ["echo","create a Docker contianer"]
+
+save
+
+i) execute it to create image
+docker build -t myimg .  //create image myimg in current directory.
+
+docker images  //to list images.
+
+ii) create containter from image, 
+docker run -d myimg  
+
+
+Docker file # 2
+---------------
+vi index.html
+<h1> hello from docker file build 2 ..!</h1>
+
+vi Dockerfile
+FROM tomcat:8.0
+RUN apt-get update && apt-get install wget
+COPY index.html /usr/local/tomcat/webapps/ROOT/index.html
+USER root
+WORKDIR /usr/local/tomcat
+CMD ["echo" ,"create a Docker container"]
+CMD ["catalina.sh","run"]
+EXPOSE 8080
+
+save and execute
+
+docker build -t mytom:1.0 . 
+docker run -itd -p 8080:8080 mytom:1.0
+
+
+host_mahcine_ip:8080 --open this in browser.
+
+Docker file # 3
+---------------
+vi index.html
+<h1> hello from docker file build 2 ..!</h1>
+
+vi Dockerfile
+FROM tomcat:8.0
+RUN apt-get update && apt-get install wget
+COPY index.html /usr/local/tomcat/webapps/ROOT/index.html
+ADD https://tomcat.apache.org/tomcat-6.0-doc/appdev/sample/sample.war /usr/local/tomcat/webapps/sample.war
+USER root
+WORKDIR /usr/local/tomcat
+CMD ["echo" ,"create a Docker container"]
+CMD ["catalina.sh","run"]
+EXPOSE 8080
+
+save and execute
+
+docker build -t mytom:2.0 . 
+docker run -itd -p 9080:8080 mytom:2.0
+
+
+host_mahcine_ip:9080 --open this in browser.
+
+
+Docker file # 4 :: to install nginx web server.
+
+cd /root/dir1
+
+vi index.html
+<h1>hello from nginx ..!</h1>
+
+vi Dockerfile
+FROM ubuntu
+RUN apt-get update
+RUN apt-get instally -y nginx
+COPY index.html '/usr/share/nginx/html/index.html
+CMD ['/etc/init.d/nginx','start']
+EXPOSE 80
+
+save and execute(create image and then create contianer from image)
+
+docker build -t mynginx
+docker images  // list images.
+docker run -it -p 80:80 --name demo_container mynginx /bin/bash 
+
+//if you don't give name to container docker assigns a name itself which is a combination of two random words.
+
+Now we are in nginx container.
+cd /usr/share/nginx/html  //you can find your index.html.
+
+ctrl pq  // to exit from container.
+
+docker ps  
+
+docker network ls  //by default contianer uses bridge network. We can set our own network also.
+
+docker inspect demo_container
+
+DOCKER COMPOSE
+---------------
+
+Docker file # 5 :: To run multiple containers for single application.
+
+e.g wordpress :: tomcat + sql
+
+Docker compose file(docker-compose.yml) we can join containers.
+
+Overview :: Compose is a tool for defining and running multi-container docker applications. With compose you use a compose file to configure your application's services.
+
+then, using a single command, you create and start all the services from your configuration.
+docker-compose up  //
+
+Three step process::
+1.) Define your app's envrionment with a dockerfile so it can be reproduced anywhere.
+2.) Define the services that make up your app in docker-compose.yml so they can be run togeather in an isolated envrionment.
+3.) lastly run docker-compose up and compose will start and run your entire app.
+
+
+Lab ::
+
+Install docker-compose and give execute permission ::
+curl -L "https://github.com/docker/compose/releases/download/1.11.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+
+chmod +x /usr/loca/bin/docker-compose
+
+docker-compose --version
+
+
+Define the project ::
+
+1.) Create an empty project directory
+cd
+mkdir wordpress
+cd wordpress
+
+
+vi docker-compose.yml
+version:'2'
+db:
+image: mysql:5.7
+volumes:
+- db_data:/var/lib/mysql
+restart always
+environment:
+MYSQL_ROOT_PASSWORD:wordpress
+MYSQL_DATABASE:wordpress
+MYSQL_USER:wordpress
+MYSQL_PASSWORD:wordpress
+
+wordpress:
+depends_on:
+- db
+image:wordpress:latest
+ports:
+- "8000:80"
+restart always
+environment:
+WORDPRESS_DB_HOST:DB:3306
+WORDPRESS_DB_PASSWORD:wordpress
+volumes:
+  db_data
+
+
+save
+
+Here we have used the built-in images wordpress and mysql5.7. We can also create our own images and use.
+
+2.) Build the project
+$docker-compose up -d // detached node.
+
+docker images
+docker ps
+netstat -lntp
+
+3.) Open browser
+mahcine_ip:8000  //it will open wordpress application.
+
+
+
+Dockerfile can be used to create one image while docker-compose is used to  join multiple images.
+
+
+----------------------------------------------------
+
+Docker Swarm :: Docker swarm is cluster of docker engines which will access same contianers. If one engine fails service will coninue to run on other nodes and secondly we can scale. 
+
+A swarm is a cluster of docker engines or nodes, where you deploy services.
+The docker engine CLI and API include commands to manage swarm nodes(e.g., add or remove nodes), and deploy and orchestrate services across the swarm.
+You enable swarm mode for an engine by either intilizing a swarm or joining an exisiting swarm.
+
+Node : A node is an instance of docker engine participating in the swarm.
+To deploy your application to a swarm, you submit a service definition to a manager node.
+The manager node dispaches units of work called tasks to worker nodes.
+Manager nodes also performs orchestration and cluser mgt. functions required to maintain the desired state of swarm.
+Manager nodes elect a single leader to conduct orchestration tasks.
+Swarm can have mulitple managers.
+
+ 
+
+Lab : 
+1.)	create two unbuntu instances. And one we have already with docker engine installed.
+
+Docker-worker-1
+Docker-worker-2
+
+SSH login to both nodes.
+
+sudo su -
+
+Install docker on both nodes same as we have done at start of this chapter, follow the below doc::
+
+docker CE on ubunut
+Search "docker install ubuntu" , or use below link for ubuntu::
+https://docs.docker.com/install/linux/docker-ce/ubuntu/
+or you can use a single script ::
+curl -fsfl https://test.docker.com |sh
+
+2. ) To create a docker swarm :
+
+ON mgr node ::
+
+hostname -i  //get mgr node ip address.
+
+docker swarm init --advertise-addr manager_node_ip_address
+
+docker swarm init --listen-addr manager_node_ip_address:2377
+
+e.g 
+docker swarm init --listen-addr 172.31.45.250:2377
+ 
+
+Now add worker using highlighted command. Save this token as whenever we have to add worker we have to execute this command.
+docker swarm join –token SWMTKN-1-4raw7uo7t0ujz71…..172.31.45.250:2377
+To add another manager run :: ‘docker swarm join-token manager’ command.
+
+3.) Add worker node to swarm ::
+
+docker node list  //you can see one node only till now and that is leader.
+
+ON both worker nodes  excute the token you saved in last step::
+sudo su -
+docker swarm join –token SWMTKN-1-4raw7uo7t0ujz71…..172.31.45.250:2377
+
+On master or mgr node ::
+docker node list // you can see three nodes.
+docker info   //to get info of swarm.
+
+
+4.)To leave docker swarm ::
+On workder node ::
+docker swarm leave
+docker swarm leave -- force
+
+If you have rejoin a node again run the save token to add worker node again.
+
+5.) To add another manager :: 
+
+on manager node run :
+docker swarm join-token manager
+----------------------------------------------------------------------------------
+
+
+To manage docker servcies::: Install and run container services on swarm::
+
+mgr# docker service ls
+mgr# docker service create --replicas 5 --name demo nginx  //it will create service container demo from nginx image and scale out to 5 replicas.
+  or
+mgr# docker service create -p 80:80 --name webserver nginx  //it will create service container webserver from nginx image.
+mgr# docker service scale webserver=5     //it will scale out webserver service to 5 replicas.
+  or 
+mgr#docker service update --replicas 5 webserver
+
+mgr# netstat -lntp
+nd1# netstat -lntp
+nd2# netstat -lntp
+
+to inspect services:
+#docker service ls
+#docker service inspect <service_id>  //it will be in json format so use --pretty option.
+#docker service inspect <service_id> --pretty
+
+
+
+Now create a nginx webserver.
+
+i) Create service webserver from nginx image.
+docker service create -p 80:80 --name webserver nginx
+
+ii) Scale service webserver across workers
+docker service scale webserver=3     //scale=3 as we have 3 nodes.
+
+iii)  crosscheck  you service ::
+master node 
+docker service ls
+
+docker ps
+
+On worker 1 and 2 
+docker ps  // you can see nginx contianer on workers.
+
+iv) Paste all three nodes pulbic ip in browser you can see your nginx running on all three nodes but we have installed contianer services only on mgr node.
+
+
+---------------------------
+
+mgr# docker service create -p 8080:8080 --name appserver tomcat:8.0
+mgr# docker service ls
+mgr# docker service scale appserver=3
+mgr# docker service ls
+mgr# docker ps
+node1# docker ps
+node2# docker ps
+Paste ip:8080 for all mgr and node1 and node2. 
+
+
+Promoting a worker node ::
+
+If manager node gets down reachable node takes over as manager.
+
+           
+worker ----promote/demote----> Reachable --> manager
+mgr#docker node list
+mgr#docker node promote <node id_worker_1>
+
+nd1# docker node list  // now this node is changed to reachable node and can run docker node commands.
+
+reboot (manager node)
+mgr# init0
+
+nd1# dokcer node list  // you can find now this node is changed to mgr but it will take some time 2-3 minutes.
+
+Start main node again and demote the worker_node_1.
+
+
+ON main node ::
+mgr# docker node ls
+
+You can see mgr node is reachable and node1 is current leader.
+So demote node 1. 
+
+mgr# docker node demote <node_id copy from ls command output>
+
+mgr# docker node ls // now again mgr node is leader again.
+
+To get docker logs:
+#docker logs -f <cid>
+
+docker run -itd ubuntu
+
+docker logs -f <cid>
+
+Docker Network ::
+-----------------
+to create a docker network ::
+
+#docker network create -d bridge my_network  //-d is driver.
+#docker network ls
+#docker network inspect my_network
+
+#docker run -itd --net my_network ubuntu
+#docker ps
+#docker inspect <cid>  //you can see this new container will be using my_network.
+
+
+Docker network :: docker contianers to communicate with each other and the outside world via the host machine, there has to be a layer of networking involved.
+Docker support different types of networks, each fit for certain use cases.
+
+Network types :: docker comes with network dirvers geared towards different use cases.
+the most common network types being: bridge,overlay and macvlan.
+
+Bridge networking is hte most common network type. It is limited to containers within a single host running the docker engine.
+Bridge networks are easy to create,manager and troubleshoot.
+
+#docker network create -d bridge my-bridge-net
+
+Overlay network :: an overlay network uses software virtualization to create additional layers of network abstraction running on top of a physical network.
+In docker an overlay network driver is used for multi-host network communication.
+
+#docker network create -d overlay --subnet=192.168.10.0/24 my-overlay-net
+
+//subnet is set of ips.
+ 
+
+Macvlan networks :: The macvlan driver is used to connect docker contianers directly to the host network interfaces throguh layer 2 segmentation.
+
+#docker network create -d macvlan \
+--subnet=192.168.40.0/24 \
+--gateway=192.168.40.1\
+-o parent=eth0 my-macvlan-net
+
+
+Assign public ip address to docker container without port binding.
+MACVLAN creates multiple virtual network interfaces with different MAC addresses.
+This way if your system has multiple IP addresses with MAC addresses then we can create multiple virtual network interfaces each having their own IP address and MAC address.
+
+MACVLAN doesn't need to learn(identify) mac addresses of the systems within the network to distribute traffic as it knows evey mac address, this makes it fast and easy to setup than bridge type networking.
+
+Problems with docker containers port binding/port mapping::
+1.) If a container uses port 8080 of host hten no other containers can use that port.
+2.) Binding multiple ports to containers can be done by specifying port range but this operation takes more time depending on no. of ports to bind.
+3.) IPTables rules become cumbersome as no. of bindings increase.
+
+Advantages of MACVLAN :
+1.) IPTables aren't affected.
+2.) No port binding
+3.) Easy to setup
+4.) Faster than bridged networking.
+
+
+----------------------------------------------------------------------------
+
+
+
+Commands summary ::
+
+Image commands ::
+images - list all local images.
+run : create container from an image and execute a command in it.
+tag - tage an image
+pull - download image from repository
+push - to push an image to docker hub.
+rmi - delete a local image. This will remove intermediate images if no longer used.
+
+Container commands ::
+ps - list all running contianers.
+ps -a -- Listt all conatiners (including stopped)
+top - display processes of a container
+start - start a stoped container
+stop - stop a running contianer
+pause - pause all processes within a container
+rm - delete a container
+commit - create an image from a container
+attach - to enter to running container
+
+ps -aq -- list all contianer_ids.
+rm -$(docker ps -aq)  // to rm all container.
+
+docker ps -aq
+docker rm container_id
+docker rm $(docker ps -aq)
+
+docker images
+docker images -aq
+docker rmi image_id
+docker rmi $(docker images -aq)
+
+docker run ubuntu 
+docker ps -a  //one container is created but status will be exited as contianer has stopped after creation.
+
+docker run -it ubuntu   //it stands for intractive terminal
+docker run -d tomcat:8.0 //start container in detached mode
+docker attach <contianer_id> //to enter into a running container.
+ctrl pq  // we can exit contianer but container will run in background.
+docker commit <container_id> my_image // to create image from contianer.
+
+docker run -d -p 8080:8080 tomcat8.0
+docker run -d -p 9080:8080 tomcat8.0
+
+To get image and continaer details ::
+docker ps -q
+docker inspect cid  //it will display container details.
+docker inspect cid | grep IPAddress
+docker images
+docker inspect image_id
+
+To check network ::
+
+docker network ls 
+docker network inspect  cid
+docker network inspect  host
+docker network inspect bridge
+
+to start/stop service running in a contianer like sql or http etc. It will not stop container but it will stop a service running inside a container.
+docker start cid
+docker stop cid  
+docker pause cid
+docker resume cid
+
+Sharing a filesystem  to multiple containers ::
+docker run -it -v /root/files:/files ubuntu
+
+Commands in docker file 
+-----------------------
+COPY :: copies file from host system to container.
+ADD :: download file from remoter serve and copies file from host to continer
+CMD :: command that runs when continaer starts.
+ENV : SETS an environment variable in the new container.
+EXPOSE :: opENS A PORT FOR LINKED CONTAINERS.
+MAINTAINER : an optional value for the maintainer of the script.
+RUN : Executes a command and save the result as a new layer.
+USER :: sETS the default user within container.
+VOLUME : creates a shared volume that can be shared among containers or by the host machine.
+WORKDIR : set the default wokring directory for the continaer.
+
+Dockerfile can be used to create one image while docker-compose is used to  join multiple images
+$docker-compose up -d // detached node
+
+Docker Swarm :: Docker swarm is cluster of docker engines which will access same contianers
+
+docker swarm init --listen-addr manager_node_ip_address:2377
+docker swarm join
+docker swarm leave
+mgr# docker service create -p 8080:8080 --name appserver tomcat:8.0
+mgr# docker service ls
+mgr# docker service scale appserver=3
+mgr# docker service ls
+mgr# docker ps
+node1# docker ps
+node2# docker ps
+docker node promote/demote <node id_worker_1>
+
+to create a docker network ::
+
+#docker network create -d bridge my_network  //-d is driver.
+#docker network ls
+#docker network inspect my_network
+
+#docker run -itd --net my_network ubuntu
+#docker ps
+#docker inspect <cid> 
+
+  
+***********************************************************************
+
+11. Vagrant ::
+
+Installation ::
+
+Download and follow below order for installation::
+git bash (search git for windows)
+oracle virtual box (hypervisor)
+vagrant.
+
+IN BIOS setting virtualisation should be enabled.
+
+i) Install gitbash
+seach git for windows and download.
+ii) search virtualbox download
+select windows hosts -- download
+iii) select Vagrant download -- select vagrant for windows.
+
+Once these all are installed ::
+
+Open gitbash :: 
+cd d:   //go to d drive or an empty drive
+cd e:
+mkdir VirtaulBoxes
+cd VirtualBoxes
+mkdir ubuntu
+cd ubuntu
+vagrant init ubuntu/trusty64
+https://app.vagrantup.com/boxes this site contains commands to which os to install.
+ls   /vagrant file will be created
+vi vagrant
+vagrant --version
+
+IN this vagrant file it has ip address,memory,cpu etc but its all commented. 
+
+Configure vagrant file ::
+vi vagrantfile
+
+Uncomment and edit below 
+
+config.vm.provider "virtualbox" do |vb|
+vb.memory ="2048"
+vb.cpus ="2"
+end
+
+save
+
+How to start server  and connet::
+
+Vagrant up
+ssh vagrant 
+useranme/pwd :: vagrant/vagrant
+cat /os-release
+free -m
+vagrant halt  :: to shut down server
+vagrant reload :: if any configuration changes made than to reload them.
+vagrant destroy    //to terminate mahcine.
+vagrant destory -f 
+
+to allocate ip-address ::
+Create  a private ip which allows host-only access to the machine.
+vi vagrant 
+config.vm.network "private_network", ip:
+"192.168.33.15"
+
+to confiugre shell script to install rpms ::
+config.vm.provision "shell" inline <<-SHELL
+apt-get udpate
+apt-get install -y apache
+service apache2 start
+SHELL
+
+save
+
+vagrant up
+
+HOst mahcine browser you can type ip you apache2 page will appear.
+But it cannot be accessed by other mahicnes. To make it accessible from other machine we have to do port_forwarding/mapping.
+
+vi vagrant
+uncomment below line 
+config.vm.network  guest port 80 and host port 80.
+
+If its tomacat guest 8080 : host 8080.
+
+If host 8080 is not empty you can use different host port. 
+
+save 
+
+Now type localhost or your host mahcine ip address in browser you can see vagrant apache2 page.
+
+vagrant reload
+
+In Oracle virtual box on desktop machine when we open it.
+
+
+//ly you can create other mahicnes like centos, for each box we need to create a new directory and in that we hace to create Vb.
+		
+
+***************************************************************************************************************
+
+12 Nagios
+
+Nagios :: Nagios is a monitoring tool which monitors your entire IT infrastructure to ensure systesms,application,services and businss processes are funtioning properly.
+
+It is written in C for performance reasons and is desinged to run natively Linux/Unix systems.
+
+https://www.nagios.org/download/nagios-core
+
+nagios core (free) and nagios xi (paid but having more features)
+ON nagios server Insatall ::
+apache
+mysql
+nagios core
+nagios plugin
+nagion nrpe
+
+vi /etc/apache2/mods-enabled/dir.conf 
+bring index.php at first i.e. after direcotryIndex index.php
+save
+
+vi /etc/xinetd.d/nrpe
+only_from = nagios_server_public_ip_address
+
+save
+
+vi /usr/local/nagions/etc/nagios.cfg
+cfg_dir=/usr/local/nagios/etc/servers  //uncomment this
+
+save and create this directory
+
+vi /usr/local/nagios/etc/objects/contacts.cfg
+email : enter your email
+save
+
+Access the nagios server ::
+http://<nagios_serverip/nagios
+
+clock tactical overview -- you can hosts and their status.
+
+Click services -- you can see services and their status.
+Reports -- you can see report for all hosts or particular host.
+
+On host machines install agent::
+
+install 
+nagios-plugins
+nagios-nrpe-server 
+
+vi /etc/nagios/nrpe.cfg 
+allowed_hosts=127.0.0.1, add nagios server public_ip_address
+save
+
+$ service nagios-nrpe-server restart 
+
+Now server should also recognise agent so on server node ::
+
+vi /usr/local/nagios/etc/servers/nagihost.cfg 
+define host {
+        use                             linux-server
+        host_name               nagihost.satish.com
+        alias                           My first Apache server
+        address                        192.168.33.46
+        max_check_attempts              5
+        check_period                    24x7
+        notification_interval           30
+        notification_period             24x7
+}
+$ sudo service nagios reload
+************************************************************************
+
+
+
+
+
+ 
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
