@@ -1,0 +1,23 @@
+{
+  "name": "ec2_start_stop",
+  "version": "0.0.1",
+  "description": "Stop and Start EC2 instance.",
+  "scripts": {
+    "serverless": "serverless",
+    "deploy": "serverless deploy",
+    "start": "serverless invoke --function start",
+    "stop": "serverless invoke --function stop",
+    "remove": "serverless remove"
+  },
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "main": "index.js",
+  "author": "Abhay <abhaypratap3536@gmail.com>",
+  "homepage": "https://github.com/abhi15sep",
+  "license": "MIT",
+  "devDependencies": {
+    "serverless": "^1.8.0"
+  }
+}
