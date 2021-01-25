@@ -3,14 +3,14 @@
 ###### Two Lambda functions are needed to run [Start](start.js) and [Stop](stop.js) Scripts.
 _______________________________________________________________________________________________________________________________________
 #### Start function:  [Instructions](https://github.com/jparasha/Start-Stop-EC2-Instances_Across_All_Regions/blob/master/README.md#alambda-function-to-start-instances-startjs)
-  -  [Steps](https://github.com/jparasha/Start-Stop-EC2-Instances_Across_All_Regions/blob/master/README.md#steps)
+  -  [Steps](https://github.com/abhi15sep/Start-Stop-EC2-Instances_Across_All_Regions/blob/master/README.md#steps)
   
-  -  [Tagging Instructions for Start Function](https://github.com/jparasha/Start-Stop-EC2-Instances_Across_All_Regions/blob/master/README.md#tags)
-  -  [IAM Roles](https://github.com/jparasha/Start-Stop-EC2-Instances_Across_All_Regions/blob/master/README.md#required-iam-roles-for-lambda-function)
+  -  [Tagging Instructions for Start Function](https://github.com/abhi15sep/Start-Stop-EC2-Instances_Across_All_Regions/blob/master/README.md#tags)
+  -  [IAM Roles](https://github.com/abhi15sep/Start-Stop-EC2-Instances_Across_All_Regions/blob/master/README.md#required-iam-roles-for-lambda-function)
   
 #### Stop function: [ Instructions](https://github.com/jparasha/Start-Stop-EC2-Instances_Across_All_Regions/blob/master/README.md#b-lambda-function-to-stop-instances-stopjs)
 
-  -  [Tagging Instructions for Stop Function](https://github.com/jparasha/Start-Stop-EC2-Instances_Across_All_Regions/blob/master/README.md#for-stop-instances-function-i-have-used-following-key-pair-tag)
+  -  [Tagging Instructions for Stop Function](https://github.com/abhi15sep/Start-Stop-EC2-Instances_Across_All_Regions/blob/master/README.md#for-stop-instances-function-i-have-used-following-key-pair-tag)
 
 
 _______________________________________________________________________________________________________________________________________
@@ -61,7 +61,7 @@ ________________________________________________________________________________
 ### b.) Lambda function to Stop Instances ([stop.js](stop.js)):
   The [stop.js](stop.js) script shuts down all EC2 instances across all regions.
   Based on requirements cron job can be modified to shut down instances.
-  Instructions are same as [Starting Instances](https://github.com/jparasha/Start-Stop-EC2-Instances_Across_All_Regions#alambda-function-to-start-instances-startjs), 
+  Instructions are same as [Starting Instances](https://github.com/abhi15sep/Start-Stop-EC2-Instances_Across_All_Regions#alambda-function-to-start-instances-startjs), 
   except for the tags.
 ###### For Stop-instances function, I have used following Key-pair Tag:
 
